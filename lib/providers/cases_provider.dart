@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../models/saved_case_model.dart';
 
 final casesProvider =
@@ -14,6 +15,7 @@ class CasesNotifier extends StateNotifier<List<SavedCaseModel>> {
   }
 
   Future<Box> get _box async => Hive.openBox('cases');
+  late final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
   Future<void> _load() async {
     final box = await _box;
@@ -42,6 +44,16 @@ class CasesNotifier extends StateNotifier<List<SavedCaseModel>> {
       'status': c.status,
       'resultJson': json.encode(c.resultJson),
     });
+    
+    // Log case saved event
+    await _analytics.logEvent(
+      name: 'case_saved',
+      parameters: {
+        'category': c.category,
+        'status': c.status,
+      },
+    );
+    
     await _load();
   }
 

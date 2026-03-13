@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/legal_result_model.dart';
 
 class RealAIService {
   final Dio _dio;
   final String _apiKey;
   
-  RealAIService() : _dio = Dio(), _apiKey = dotenv.env['OPENAI_API_KEY'] ?? '' {
+  RealAIService() : _dio = Dio(), _apiKey = '' {
     _dio.options.baseUrl = 'https://api.openai.com/v1';
     _dio.options.headers['Authorization'] = 'Bearer $_apiKey';
     _dio.options.headers['Content-Type'] = 'application/json';

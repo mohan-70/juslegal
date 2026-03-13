@@ -112,6 +112,16 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
                 label: 'Analyze My Problem',
                 onPressed: _analyze,
                 enabled: valid),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                'JusLegal provides AI-generated information only. This is NOT legal advice. '
+                'For legal proceedings, consult a qualified advocate. '
+                'AI responses may be inaccurate — always verify with official sources.',
+                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ],
         ),
       ),

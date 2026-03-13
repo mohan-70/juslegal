@@ -35,8 +35,6 @@ dependencies:
   go_router: ^13.1.0
   hive_flutter: ^1.1.0
   dio: ^5.4.0
-  flutter_dotenv: ^5.1.0
-  pretty_dio_logger: ^1.3.1
   google_fonts: ^5.1.0
   lottie: ^3.0.0
   share_plus: ^7.2.2
@@ -44,6 +42,12 @@ dependencies:
   intl: ^0.18.1
   shared_preferences: ^2.2.2
   cupertino_icons: ^1.0.2
+  
+  # Firebase
+  firebase_core: ^2.24.2
+  cloud_functions: 4.6.8
+  firebase_analytics: ^10.7.5
+  firebase_crashlytics: ^3.4.9
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -75,7 +79,6 @@ flutter:
     - assets/legal_kb.json
     - assets/legal_kb_expanded.json
     - assets/community_wins.json
-    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

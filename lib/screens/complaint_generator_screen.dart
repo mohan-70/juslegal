@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../providers/ai_provider.dart';
 import '../providers/complaint_provider.dart';
+import '../providers/problem_provider.dart';
 import '../widgets/pro_upgrade_sheet.dart';
 import '../core/constants/app_strings.dart';
 import '../core/constants/app_colors.dart';
+import '../core/constants/complaint_templates.dart';
 
 class ComplaintGeneratorScreen extends ConsumerStatefulWidget {
   const ComplaintGeneratorScreen({super.key});
@@ -24,15 +27,20 @@ class _ComplaintGeneratorScreenState
   final _address = TextEditingController();
   final _opponent = TextEditingController();
   final _problem = TextEditingController();
-  final DateTime _date = DateTime.now();
+  DateTime _incidentDate = DateTime.now();
   String _tab = 'Email Complaint';
   String _generated = '';
+  String _category = '';
+  late final FirebaseAnalytics _analytics;
 
   @override
   void initState() {
     super.initState();
-    final result = ref.read(lastResultProvider);
-    _problem.text = result?.userRights ?? '';
+    _analytics = FirebaseAnalytics.instance;
+    final problem = ref.read(problemProvider);
+    _problem.text = problem.description;
+    _category = problem.category;
+    _incidentDate = DateTime.now();
   }
 
   void _generate() async {
@@ -48,28 +56,40 @@ class _ComplaintGeneratorScreenState
     }
     final result = ref.read(lastResultProvider);
     if (result == null) return;
+    
+    final problem = ref.read(problemProvider);
     final df = DateFormat('dd MMM yyyy');
-    final body = StringBuffer()
-      ..writeln(
-          'Subject: $_tab regarding ${_opponent.text.isEmpty ? "your entity" : _opponent.text}')
-      ..writeln()
-      ..writeln(df.format(_date))
-      ..writeln()
-      ..writeln('To,')
-      ..writeln(_opponent.text.isEmpty ? 'Concerned Authority' : _opponent.text)
-      ..writeln()
-      ..writeln('Dear Sir/Madam,')
-      ..writeln()
-      ..writeln(
-          'I am writing to formally raise a consumer grievance. ${result.applicableLaw} recognizes my rights as follows: ${result.userRights}')
-      ..writeln()
-      ..writeln('I request the following resolution within 7 working days: ')
-      ..writeln('- Provide due refund/relief as per the law cited.')
-      ..writeln()
-      ..writeln('Sincerely,')
-      ..writeln(_name.text)
-      ..writeln(_address.text);
-    setState(() => _generated = body.toString());
+    final incidentDf = DateFormat('dd MMM yyyy');
+    
+    // Get the appropriate template
+    String templateType = _tab.toLowerCase().contains('email') ? 'email' : 
+                         _tab.toLowerCase().contains('police') ? 'police' : 'consumer_court';
+    String template = ComplaintTemplates.getTemplate(_category, templateType);
+    
+    // Replace placeholders with actual data
+    String body = template
+      .replaceAll('[Current Date]', df.format(DateTime.now()))
+      .replaceAll('[Incident Date]', incidentDf.format(_incidentDate))
+      .replaceAll('[Your Name]', _name.text.isEmpty ? '[Your Name]' : _name.text)
+      .replaceAll('[Your Address]', _address.text.isEmpty ? '[Your Address]' : _address.text)
+      .replaceAll('[Your Phone Number]', '[Your Phone Number]')
+      .replaceAll('[Your Email Address]', '[Your Email Address]')
+      .replaceAll('[Company Name]', _opponent.text.isEmpty ? '[Company Name]' : _opponent.text)
+      .replaceAll('[User Problem Description]', problem.description)
+      .replaceAll('[User Rights from Legal Analysis]', result.userRights)
+      .replaceAll('[Applicable Law]', result.applicableLaw);
+    
+    setState(() => _generated = body);
+    
+    // Log document generated event
+    await _analytics.logEvent(
+      name: 'document_generated',
+      parameters: {
+        'category': _category,
+        'type': _tab.toLowerCase().replaceAll(' ', '_'),
+      },
+    );
+    
     await ref.read(complaintProvider.notifier).increment();
   }
 
@@ -172,11 +192,32 @@ class _ComplaintGeneratorScreenState
                   decoration:
                       const InputDecoration(labelText: 'Opponent name')),
               const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Date of Incident'),
+                subtitle: Text(DateFormat('dd MMM yyyy').format(_incidentDate)),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _incidentDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now().add(const Duration(days: 30)),
+                  );
+                  if (date != null) {
+                    setState(() => _incidentDate = date);
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
               TextField(
                   controller: _problem,
-                  maxLines: 3,
-                  decoration:
-                      const InputDecoration(labelText: 'Problem summary')),
+                  maxLines: 4,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Problem Description',
+                    helperText: 'This is filled from your problem analysis',
+                    border: OutlineInputBorder(),
+                  )),
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: _generate, 

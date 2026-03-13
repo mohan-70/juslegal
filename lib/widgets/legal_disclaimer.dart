@@ -53,7 +53,7 @@ class LegalDisclaimer extends StatelessWidget {
                 ? 'This is AI-generated legal guidance based on Indian consumer law. It is not a substitute for professional legal advice. For serious matters, court cases, or complex disputes, always consult a practicing advocate.'
                 : 'This is general legal guidance, not legal advice. Consult a lawyer for serious matters.',
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.textMediumGrey,
               fontSize: 12,
               height: 1.4,
             ),
@@ -128,7 +128,7 @@ class LegalDisclaimer extends StatelessWidget {
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textMediumGrey,
                   fontSize: 10,
                 ),
               ),

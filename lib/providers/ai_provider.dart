@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../models/legal_result_model.dart';
 import '../services/ai_service.dart';
 import '../core/exceptions/ai_exceptions.dart';
@@ -27,10 +28,12 @@ class AnalysisState {
 // AsyncNotifier for analysis state management
 class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
   late final AIService _aiService;
+  late final FirebaseAnalytics _analytics;
 
   @override
   AnalysisState build() {
     _aiService = ref.read(aiServiceProvider);
+    _analytics = FirebaseAnalytics.instance;
     return AnalysisState();
   }
 
@@ -38,6 +41,15 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
     state = AsyncValue.data(AnalysisState(isLoading: true));
 
     try {
+      // Log analysis started event
+      await _analytics.logEvent(
+        name: 'analysis_started',
+        parameters: {
+          'category': category,
+          'problem_length': problemText.length,
+        },
+      );
+
       // Initialize AI service
       await _aiService.initialize();
 
@@ -50,11 +62,29 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
       // Update both new and old providers
       ref.read(lastResultProvider.notifier).state = legalResult;
 
+      // Log analysis completed event
+      await _analytics.logEvent(
+        name: 'analysis_completed',
+        parameters: {
+          'category': category,
+          'confidence': legalResult.confidence,
+        },
+      );
+
       state = AsyncValue.data(AnalysisState(
         result: AsyncValue.data(legalResult),
         isLoading: false,
       ));
     } catch (e, stackTrace) {
+      // Log analysis error event
+      await _analytics.logEvent(
+        name: 'analysis_error',
+        parameters: {
+          'category': category,
+          'error_type': e.runtimeType.toString(),
+        },
+      );
+
       String errorMessage = _getErrorMessage(e);
       state = AsyncValue.error(errorMessage, stackTrace);
     }

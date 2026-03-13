@@ -10,18 +10,18 @@ JusLegal is an AI-powered consumer legal assistant for Indian citizens, providin
 
 ## Features
 
-- **AI-Powered Legal Analysis** - Get instant legal guidance using Groq AI with OpenRouter fallback
+- **AI-Powered Legal Analysis** - Get instant legal guidance using Firebase Cloud Functions with Groq AI and OpenRouter fallback
 - **Consumer Law Focus** - Specialized for Indian consumer protection laws and regulations
 - **Step-by-Step Guidance** - Clear action steps for resolving legal issues
 - **Authority Directory** - Contact information for relevant regulatory bodies
 - **Document Generation** - Generate complaint letters and legal documents
 - **Case Management** - Save and track your legal cases
-- **Offline Knowledge Base** - Access legal information even without internet
 - **Cross-Platform** - Works on Android, iOS, and Web
 - **Trust & Verification System** - Legal expert verification badges and transparent AI sourcing
 - **Real User Testimonials** - Social proof with actual case outcomes and success stories
 - **Streaming AI Responses** - Real-time analysis with better user experience
 - **Error Boundaries** - Graceful error handling with retry mechanisms
+- **Offline Knowledge Base** - Access legal information even without internet (Mobile only — not available on web)
 
 ## Trust & Credibility Features
 
@@ -42,14 +42,15 @@ JusLegal addresses the fundamental trust issues in AI legal assistance through:
 **Core Libraries:**
 - `flutter_riverpod` - State management
 - `dio` - HTTP client for API calls
-- `flutter_dotenv` - Environment variable management
 - `go_router` - Navigation and routing
 - `hive_flutter` - Local data storage
-- `pretty_dio_logger` - Network request logging
+- `firebase_core` - Firebase services
+- `cloud_functions` - Firebase Cloud Functions
+- `firebase_analytics` - Analytics tracking
+- `firebase_crashlytics` - Error reporting
 
 **AI Services:**
-- Groq API (Primary) - Llama 3.3 70B model
-- OpenRouter API (Fallback) - Meta Llama 3.3 70B model
+- Firebase Cloud Functions (Server-side) - Groq API and OpenRouter API integration
 
 ## Prerequisites
 
@@ -64,7 +65,7 @@ Before setting up JusLegal, ensure you have:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/juslegal.git
+   git clone https://github.com/mohan-70/juslegal.git
    cd juslegal
    ```
 
@@ -73,11 +74,10 @@ Before setting up JusLegal, ensure you have:
    flutter pub get
    ```
 
-3. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
-   ```
+3. **Set up Firebase:**
+   - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+   - Set up Firebase Hosting and Cloud Functions
+   - Configure API keys in Firebase environment config
 
 4. **Run the app:**
    ```bash
@@ -127,28 +127,30 @@ Widget build(BuildContext context, WidgetRef ref) {
 
 ## Configuration
 
-### Environment Variables
+### Firebase Setup
 
-Create a `.env` file in the project root with the following variables:
+JusLegal uses Firebase Cloud Functions to securely handle AI API calls. API keys are managed server-side and never exposed to the client.
+
+1. **Firebase Project Setup:**
+   - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+   - Enable Cloud Functions and Hosting
+   - Configure environment variables for API keys
+
+2. **Cloud Functions Deployment:**
+   ```bash
+   cd functions
+   npm install
+   firebase deploy --only functions
+   ```
+
+### Environment Variables (Server-side)
+
+API keys are now configured in Firebase Cloud Functions environment config:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `GROQ_API_KEY` | Groq API key for primary AI service | Yes |
 | `OPENROUTER_API_KEY` | OpenRouter API key for fallback AI service | Yes |
-| `APP_NAME` | Application name (used by OpenRouter) | No |
-| `APP_URL` | Application URL (used by OpenRouter) | No |
-
-### API Setup
-
-1. **Groq API:**
-   - Sign up at [console.groq.com](https://console.groq.com)
-   - Create an API key
-   - Add `GROQ_API_KEY=your_key_here` to `.env`
-
-2. **OpenRouter API:**
-   - Sign up at [openrouter.ai](https://openrouter.ai)
-   - Create an API key
-   - Add `OPENROUTER_API_KEY=your_key_here` to `.env`
 
 ## Project Structure
 
@@ -188,7 +190,7 @@ We welcome contributions! Here's how to get started:
 
 1. **Fork the repository**
    ```bash
-   git clone https://github.com/your-username/juslegal.git
+   git clone https://github.com/mohan-70/juslegal.git
    ```
 
 2. **Create a feature branch**
@@ -220,8 +222,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contact / Credits
 
 **Development Team:** JusLegal Contributors  
-**Website:** [juslegal.app](https://juslegal.app)  
-**Support:** support@juslegal.app  
+**Website:** [juslegal-2196.web.app](https://juslegal-2196.web.app)  
+**Support:** [coming soon]  
 
 **Special Thanks:**
 - Groq for providing the primary AI service

@@ -48,11 +48,92 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       );
     } else {
       final prefs = await SharedPreferences.getInstance();
+      
+      // Check if disclaimer has been shown
+      final disclaimerShown = prefs.getBool('disclaimer_shown') ?? false;
+      
+      if (!disclaimerShown) {
+        // Show disclaimer dialog
+        await _showDisclaimerDialog(context, prefs);
+      }
+      
       await prefs.setBool('seen_onboarding', true);
       if (context.mounted) {
         context.go('/home');
       }
     }
+  }
+
+  Future<void> _showDisclaimerDialog(BuildContext context, SharedPreferences prefs) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // Cannot dismiss by tapping outside
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
+        
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber, color: Colors.amber[700], size: 24),
+              const SizedBox(width: 12),
+              const Text('Important Disclaimer'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'JusLegal provides AI-generated information only. This is NOT legal advice.',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.amber[700],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '• For legal proceedings, consult a qualified advocate\n'
+                  '• AI responses may be inaccurate\n'
+                  '• Always verify with official sources\n'
+                  '• This app does not create an attorney-client relationship',
+                  style: textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    'By using JusLegal, you acknowledge that you have read and understood this disclaimer.',
+                    style: textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Mark disclaimer as shown
+                prefs.setBool('disclaimer_shown', true);
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'I Understand',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
