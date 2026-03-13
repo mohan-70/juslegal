@@ -1,6 +1,7 @@
 import 'package:google_generative_ai/google_generative_ai.dart'; 
 import 'package:flutter/foundation.dart'; 
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 
 const String _systemPrompt = """
@@ -35,16 +36,19 @@ class GeminiService {
   Future<void> initialize() async {
     // Try to get API key from environment variable or platform-specific secure storage
     try {
+      // Load .env file
+      await dotenv.load(fileName: ".env");
+      
       // For web, we'll use a proxy approach - don't expose API key directly
       if (kIsWeb) {
         throw Exception('Gemini API should be called through proxy on web platform');
       }
       
-      // For mobile builds, get from secure storage or environment
-      _apiKey = const String.fromEnvironment('GEMINI_API_KEY');
+      // For mobile builds, get from .env file or environment
+      _apiKey = dotenv.env['GEMINI_API_KEY'] ?? const String.fromEnvironment('GEMINI_API_KEY');
       
       if (_apiKey == null || _apiKey!.isEmpty) {
-        throw Exception('Gemini API key not configured');
+        throw Exception('Gemini API key not configured. Please add GEMINI_API_KEY to your .env file');
       }
       
       _model = GenerativeModel(
@@ -58,12 +62,37 @@ class GeminiService {
       );
     } catch (e) {
       if (kDebugMode) print('[GeminiService] Initialization failed: $e');
-      rethrow;
+      // Don't rethrow for web platform - allow fallback to other services
+      if (!kIsWeb) {
+        rethrow;
+      }
     }
   } 
  
   Future<Map<String, dynamic>> analyze(String problem, String category) async { 
     try { 
+      // For web platform, try to use API key from .env if available
+      if (kIsWeb) {
+        try {
+          await dotenv.load(fileName: ".env");
+          _apiKey = dotenv.env['GEMINI_API_KEY'];
+          if (_apiKey != null && _apiKey!.isNotEmpty) {
+            // Initialize model for web if API key is available
+            _model = GenerativeModel(
+              model: 'gemini-2.0-flash',
+              apiKey: _apiKey!,
+              systemInstruction: Content.system(_systemPrompt),
+              generationConfig: GenerationConfig(
+                temperature: 0.3,
+                maxOutputTokens: 1024,
+              ),
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) print('[GeminiService] Web initialization failed: $e');
+        }
+      }
+      
       if (_apiKey == null) {
         throw Exception('Gemini service not initialized');
       }

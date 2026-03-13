@@ -42,6 +42,7 @@ dependencies:
   intl: ^0.18.1
   shared_preferences: ^2.2.2
   cupertino_icons: ^1.0.2
+  flutter_dotenv: ^5.1.0
   
   # Firebase
   firebase_core: ^2.24.2
@@ -82,6 +83,7 @@ flutter:
     - assets/legal_kb.json
     - assets/legal_kb_expanded.json
     - assets/community_wins.json
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

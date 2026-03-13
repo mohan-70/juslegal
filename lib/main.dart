@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/constants/app_theme.dart';
 import 'core/constants/app_config.dart';
 import 'core/constants/firebase_options.dart';
@@ -13,6 +14,18 @@ import 'services/legal_compliance_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
+  try {
+    await dotenv.load(fileName: ".env");
+    print('✅ .env file loaded successfully');
+  } catch (e) {
+    print('⚠️ Could not load .env file: $e');
+    // For web, this is expected since we'll use Cloudflare proxy
+    if (!kIsWeb) {
+      print('❌ .env file is required for mobile builds');
+    }
+  }
   
   try {
     // Initialize Firebase
