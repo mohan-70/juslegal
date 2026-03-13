@@ -32,6 +32,78 @@
 
   <title>juslegal</title>
   <link rel="manifest" href="manifest.json">
+  
+  <style>
+    /* Ensure Flutter app container is visible */
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    
+    flutter-view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    
+    /* Loading screen styles */
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+      z-index: 9999;
+      transition: opacity 0.3s ease-out;
+    }
+    
+    .loading-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #333;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-crashlytics-compat.js"></script>
+  
+  <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDummyApiKeyForTesting",
+      authDomain: "juslegal.firebaseapp.com",
+      projectId: "juslegal",
+      storageBucket: "juslegal.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef123456"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
 
   <script>
     // The value below is injected by flutter build, do not touch.
@@ -41,18 +113,9 @@
   <script src="flutter.js" defer></script>
 </head>
 <body>
-<div id="loading-screen" style="
- position:fixed; inset:0; background:#0a0a0a;
- display:flex; flex-direction:column;
- align-items:center; justify-content:center;
- font-family:sans-serif; color:#fff; z-index:9999;
-">
- <div style="font-size:24px; font-weight:700; margin-bottom:12px;">
-JusLegal</div>
- <div style="width:48px; height:48px; border:4px solid #333;
- border-top-color:#fff; border-radius:50%;
- animation:spin 0.8s linear infinite;"></div>
- <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<div id="loading-screen">
+ <div class="loading-title">JusLegal</div>
+ <div class="loading-spinner"></div>
 </div>
   <script>
     window.addEventListener('load', function(ev) {
@@ -64,7 +127,23 @@ JusLegal</div>
         onEntrypointLoaded: function(engineInitializer) {
           engineInitializer.initializeEngine().then(function(appRunner) {
             appRunner.runApp();
-            document.getElementById('loading-screen').style.display = 'none';
+            // Hide loading screen with a delay to ensure Flutter app is ready
+            setTimeout(function() {
+              const loadingScreen = document.getElementById('loading-screen');
+              if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+                console.log('Loading screen hidden successfully');
+              } else {
+                console.warn('Loading screen element not found');
+              }
+            }, 1000);
+          }).catch(function(error) {
+            console.error('Flutter engine initialization failed:', error);
+            // Still hide loading screen on error
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+              loadingScreen.style.display = 'none';
+            }
           });
         }
       });

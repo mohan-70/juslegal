@@ -10,7 +10,7 @@ JusLegal is an AI-powered consumer legal assistant for Indian citizens, providin
 
 ## Features
 
-- **AI-Powered Legal Analysis** - Get instant legal guidance using Firebase Cloud Functions with Groq AI and OpenRouter fallback
+- **AI-Powered Legal Analysis** - Get instant legal guidance using Cloudflare Workers with Groq AI and OpenRouter fallback
 - **Consumer Law Focus** - Specialized for Indian consumer protection laws and regulations
 - **Step-by-Step Guidance** - Clear action steps for resolving legal issues
 - **Authority Directory** - Contact information for relevant regulatory bodies
@@ -45,12 +45,38 @@ JusLegal addresses the fundamental trust issues in AI legal assistance through:
 - `go_router` - Navigation and routing
 - `hive_flutter` - Local data storage
 - `firebase_core` - Firebase services
-- `cloud_functions` - Firebase Cloud Functions
 - `firebase_analytics` - Analytics tracking
 - `firebase_crashlytics` - Error reporting
 
+## Proxy Setup
+
+To deploy the Cloudflare Worker proxy for secure API calls:
+
+1. **Install Wrangler CLI:**
+   ```bash
+   npm install -g wrangler
+   ```
+
+2. **Navigate to proxy directory:**
+   ```bash
+   cd proxy
+   ```
+
+3. **Set API secrets:**
+   ```bash
+   wrangler secret put GROQ_API_KEY
+   wrangler secret put OPENROUTER_API_KEY
+   ```
+
+4. **Deploy the worker:**
+   ```bash
+   wrangler deploy
+   ```
+
+The proxy will be available at `https://juslegal-proxy.workers.dev` and will handle secure API calls to Groq and OpenRouter without exposing API keys in the client-side code.
+
 **AI Services:**
-- Firebase Cloud Functions (Server-side) - Groq API and OpenRouter API integration
+- Cloudflare Workers (Server-side) - Groq API and OpenRouter API integration
 
 ## Prerequisites
 

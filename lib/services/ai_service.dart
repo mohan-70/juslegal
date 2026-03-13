@@ -2,79 +2,93 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../core/constants/api_constants.dart';
 import '../core/exceptions/ai_exceptions.dart';
-import 'groq_service.dart';
-import 'openrouter_service.dart';
+import 'gemini_service.dart';
+import 'cloudflare_service.dart';
 import 'lkb_service.dart';
 
 class AIService {
-  late final GroqService _groqService;
-  late final OpenRouterService _openRouterService;
+  late final GeminiService _geminiService;
+  late final CloudflareService _cloudflareService;
   late final LKBService _lkbService;
 
   AIService() {
-    _groqService = GroqService();
-    _openRouterService = OpenRouterService();
+    _geminiService = GeminiService();
+    _cloudflareService = CloudflareService();
     _lkbService = LKBService();
   }
 
   Future<void> initialize() async {
-    await _lkbService.load();
+    try {
+      await _lkbService.load();
+      await _geminiService.initialize();
+    } catch (e) {
+      // Continue even if Gemini fails to initialize
+      if (kDebugMode) print('[AIService] Some services failed to initialize: $e');
+    }
   }
 
-  Future<Map<String, dynamic>> analyzeProblem(String problemText, String category) async {
-    // Get legal context from LKB
-    final String legalContext = await _lkbService.getContext(problemText, category);
-
-    // Build system prompt
-    final String systemPrompt = _buildSystemPrompt(legalContext);
-
-    // Build user message
-    final String userMessage = _buildUserMessage(category, problemText);
-
-    // Try Groq first with retry logic
+  Future<Map<String, dynamic>> analyzeProblem(
+      String problemText, String category) async {
+    // 1. Try Gemini first (direct, domain-restricted key)
     try {
-      if (kDebugMode) print('Attempting analysis with Groq (${GroqService.modelName})');
+      if (kDebugMode) print('Attempting analysis with Gemini 2.0 Flash');
+      final result = await _geminiService.analyze(problemText, category);
+      if (kDebugMode) print('✅ Gemini analysis successful');
+      return result;
+    } catch (e) {
+      if (kDebugMode) print('[AIService] Gemini failed, trying fallback: $e');
+    }
+
+    // 2. Load legal context once for fallback services
+    String legalContext;
+    try {
+      legalContext = await _lkbService.getContext(problemText, category);
+    } catch (e) {
+      if (kDebugMode) print('[AIService] Failed to load legal context: $e');
+      legalContext = 'Consumer protection laws and regulations applicable to the case.';
+    }
+
+    // Build system prompt for fallback services
+    final String systemPrompt = _buildSystemPrompt(legalContext);
+    final String userMessage = _buildUserMessage(category, problemText);
+    final String fullPrompt = '$systemPrompt\n\n$userMessage';
+
+    // 3. Fallback to Cloudflare Worker (Groq)
+    try {
+      if (kDebugMode)
+        print('Attempting analysis with Groq via Cloudflare Worker');
       final result = await _tryWithRetry(
-        () => _groqService.analyze(systemPrompt, userMessage),
+        () => _cloudflareService.callGroq(fullPrompt, category: category),
         'Groq',
       );
-      if (kDebugMode) print('✅ Groq analysis successful');
+      if (kDebugMode) print('✅ Groq fallback successful');
       return result;
-    } on RateLimitException {
-      if (kDebugMode) print('⚠️ Groq rate limit exceeded, falling back to OpenRouter');
-      // Silently fallback to OpenRouter on rate limit
     } catch (e) {
-      if (kDebugMode) print('⚠️ Groq failed: $e, falling back to OpenRouter');
-      // For other errors, continue to fallback
+      if (kDebugMode) print('[AIService] Groq fallback failed, trying OpenRouter: $e');
     }
 
-    // Try OpenRouter as fallback with retry logic
+    // 4. Try OpenRouter as second fallback
     try {
-      if (kDebugMode) print('Attempting analysis with OpenRouter (${OpenRouterService.modelName})');
+      if (kDebugMode)
+        print('Attempting analysis with OpenRouter via Cloudflare Worker');
       final result = await _tryWithRetry(
-        () => _openRouterService.analyze(systemPrompt, userMessage),
+        () => _cloudflareService.callOpenRouter(fullPrompt, category: category),
         'OpenRouter',
       );
-      if (kDebugMode) print('✅ OpenRouter analysis successful');
+      if (kDebugMode) print('✅ OpenRouter fallback successful');
       return result;
-    } on RateLimitException {
-      if (kDebugMode) print('⚠️ OpenRouter rate limit exceeded, falling back to LKB');
-      // Both providers hit rate limits
     } catch (e) {
-      if (kDebugMode) print('⚠️ OpenRouter failed: $e, falling back to LKB');
-      // Both providers failed, fallback to LKB
+      if (kDebugMode) print('[AIService] All fallbacks failed: $e');
     }
 
-    // Fallback to LKB-based analysis when APIs fail
-    if (kDebugMode) print('📚 Using LKB fallback analysis');
-    final lkbResult = await _lkbService.getAnalysis(problemText, category);
-    lkbResult['_model'] = 'Legal Knowledge Base';
-    lkbResult['_provider'] = 'lkb';
-    return lkbResult;
+    // 5. All failed - throw user-friendly exception
+    throw Exception(
+        'Our AI services are temporarily unavailable. Please try again in a few minutes.');
   }
 
   // Backward compatibility method
-  Future<Map<String, dynamic>> analyze({required String problemText, required String selectedCategory}) async {
+  Future<Map<String, dynamic>> analyze(
+      {required String problemText, required String selectedCategory}) async {
     return await analyzeProblem(problemText, selectedCategory);
   }
 
@@ -94,12 +108,14 @@ class AIService {
         lastError = e.toString();
         if (attempt < ApiConstants.maxRetries - 1) {
           // Wait before retrying
-          await Future.delayed(const Duration(milliseconds: ApiConstants.retryDelayMs));
+          await Future.delayed(
+              const Duration(milliseconds: ApiConstants.retryDelayMs));
         }
       }
     }
 
-    throw Exception('All retries failed for $providerName. Last error: $lastError');
+    throw Exception(
+        'All retries failed for $providerName. Last error: $lastError');
   }
 
   String _buildSystemPrompt(String legalContext) {

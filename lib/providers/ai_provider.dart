@@ -38,6 +38,10 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
   }
 
   Future<void> analyze(String problemText, String category) async {
+    print('🚀 AI Provider: Starting analysis');
+    print('📝 Problem: ${problemText.substring(0, problemText.length > 100 ? 100 : problemText.length)}...');
+    print('📂 Category: $category');
+    
     state = AsyncValue.data(AnalysisState(isLoading: true));
 
     try {
@@ -51,13 +55,18 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
       );
 
       // Initialize AI service
+      print('🔧 Initializing AI service...');
       await _aiService.initialize();
+      print('✅ AI service initialized');
 
       // Analyze the problem using backward compatibility method
+      print('🤖 Starting AI analysis...');
       final analysisResult = await _aiService.analyze(problemText: problemText, selectedCategory: category);
+      print('✅ AI analysis completed');
 
       // Convert Map to LegalResultModel
       final legalResult = _mapToLegalResultModel(analysisResult);
+      print('📋 Result mapped to LegalResultModel');
 
       // Update both new and old providers
       ref.read(lastResultProvider.notifier).state = legalResult;
@@ -75,7 +84,11 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
         result: AsyncValue.data(legalResult),
         isLoading: false,
       ));
+      print('✅ Analysis state updated successfully');
     } catch (e, stackTrace) {
+      print('❌ Analysis failed: $e');
+      print('📚 Stack trace: $stackTrace');
+      
       // Log analysis error event
       await _analytics.logEvent(
         name: 'analysis_error',
@@ -86,6 +99,7 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
       );
 
       String errorMessage = _getErrorMessage(e);
+      print('💬 Error message: $errorMessage');
       state = AsyncValue.error(errorMessage, stackTrace);
     }
   }
@@ -161,6 +175,24 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
       return "Service temporarily unavailable. Please try again in a few minutes.";
     } else if (error is NetworkException) {
       return "No internet connection. Please check your network and try again.";
+    } else if (error is RateLimitException) {
+      return "Too many requests. Please wait a moment and try again.";
+    } else if (error is ApiKeyException) {
+      return "Service configuration error. Please try again later.";
+    } else if (error is ParseException) {
+      return "Unable to process AI response. Please try again.";
+    } else if (error is Exception) {
+      // Handle generic exceptions from AI service
+      final message = error.toString();
+      if (message.contains('unavailable') || message.contains('temporarily')) {
+        return "AI services are temporarily unavailable. Please try again in a few minutes.";
+      } else if (message.contains('network') || message.contains('connection')) {
+        return "Network connection issue. Please check your internet and try again.";
+      } else if (message.contains('API key') || message.contains('configured')) {
+        return "Service configuration error. Please try again later.";
+      } else {
+        return "Something went wrong. Please try again.";
+      }
     } else {
       return "Something went wrong. Please try again.";
     }

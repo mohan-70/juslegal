@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/problem_provider.dart';
 import '../providers/ai_provider.dart';
 import '../widgets/complaint_button.dart';
+import '../widgets/loading_message_widget.dart';
 
 class ProblemAnalyzerScreen extends ConsumerStatefulWidget {
   final String? initialCategory;
@@ -17,6 +18,7 @@ class ProblemAnalyzerScreen extends ConsumerStatefulWidget {
 class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
   late final TextEditingController _controller;
   String _category = '';
+  bool _isAnalyzing = false;
 
   String _getCategoryExample() {
     switch (_category) {
@@ -65,14 +67,58 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
   }
 
   void _analyze() async {
+    if (_isAnalyzing) {
+      print('⏳ Analysis already in progress');
+      return;
+    }
+    
     final text = _controller.text.trim();
-    ref.read(problemProvider.notifier).setDescription(text);
+    print('🔍 Analysis button clicked');
+    print('📝 Text length: ${text.length}');
+    print('📂 Category: $_category');
     
-    // Use the new analysis provider
-    await ref.read(analysisProvider.notifier).analyze(text, _category);
+    if (text.length < 30) {
+      print('❌ Text too short, showing error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter at least 30 characters to analyze your problem.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     
-    if (mounted) {
-      context.go('/home/result');
+    setState(() {
+      _isAnalyzing = true;
+    });
+    
+    try {
+      print('🔄 Starting analysis...');
+      ref.read(problemProvider.notifier).setDescription(text);
+      
+      // Use the new analysis provider
+      await ref.read(analysisProvider.notifier).analyze(text, _category);
+      
+      print('✅ Analysis completed, navigating to result screen');
+      if (mounted) {
+        context.go('/home/result');
+      }
+    } catch (e) {
+      print('❌ Analysis failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Analysis failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+      }
     }
   }
 
@@ -109,9 +155,14 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
             ),
             const Spacer(),
             ComplaintButton(
-                label: 'Analyze My Problem',
+                label: _isAnalyzing ? '' : 'Analyze My Problem',
                 onPressed: _analyze,
-                enabled: valid),
+                enabled: valid && !_isAnalyzing),
+            if (_isAnalyzing)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: LoadingMessageWidget(),
+              ),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
