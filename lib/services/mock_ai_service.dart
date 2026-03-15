@@ -42,6 +42,13 @@ class MockAIService {
       'confidence': 85,
       'isVerified': true,
       'complaint_hint': 'Be specific about dates, amounts, and previous communication attempts',
+      'order_number': 'ORD123456',
+      'product_details': 'Sample Product',
+      'amount_paid': '₹5000',
+      'payment_method': 'UPI',
+      'company_name': 'Sample Company',
+      'incident_date': '15 Jan 2024',
+      'location': 'Online',
       '_model': 'mock-service',
       '_provider': 'mock'
     };

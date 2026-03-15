@@ -69,12 +69,16 @@ class _ComplaintGeneratorScreenState
     // Replace placeholders with actual data
     String body = template
       .replaceAll('[Current Date]', df.format(DateTime.now()))
-      .replaceAll('[Incident Date]', incidentDf.format(_incidentDate))
+      .replaceAll('[Incident Date]', result.incidentDate ?? incidentDf.format(_incidentDate))
       .replaceAll('[Your Name]', _name.text.isEmpty ? '[Your Name]' : _name.text)
       .replaceAll('[Your Address]', _address.text.isEmpty ? '[Your Address]' : _address.text)
       .replaceAll('[Your Phone Number]', '[Your Phone Number]')
       .replaceAll('[Your Email Address]', '[Your Email Address]')
-      .replaceAll('[Company Name]', _opponent.text.isEmpty ? '[Company Name]' : _opponent.text)
+      .replaceAll('[Company Name]', result.companyName ?? (_opponent.text.isEmpty ? '[Company Name]' : _opponent.text))
+      .replaceAll('[Order Number]', result.orderNumber ?? '[Order Number]')
+      .replaceAll('[Product Details]', result.productDetails ?? '[Product Details]')
+      .replaceAll('[Amount]', result.amountPaid ?? '[Amount]')
+      .replaceAll('[Payment Method]', result.paymentMethod ?? '[Payment Method]')
       .replaceAll('[User Problem Description]', problem.description)
       .replaceAll('[User Rights from Legal Analysis]', result.userRights)
       .replaceAll('[Applicable Law]', result.applicableLaw);

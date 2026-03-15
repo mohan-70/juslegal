@@ -11,6 +11,15 @@ class LegalResultModel {
   final int confidence; // 0-100
   final bool isVerified;
   final String complaintHint;
+  
+  // Complaint details extracted from user input
+  final String? orderNumber;
+  final String? productDetails;
+  final String? amountPaid;
+  final String? paymentMethod;
+  final String? companyName;
+  final String? incidentDate;
+  final String? location;
 
   LegalResultModel({
     required this.category,
@@ -25,6 +34,13 @@ class LegalResultModel {
     required this.confidence,
     required this.isVerified,
     required this.complaintHint,
+    this.orderNumber,
+    this.productDetails,
+    this.amountPaid,
+    this.paymentMethod,
+    this.companyName,
+    this.incidentDate,
+    this.location,
   });
 
   factory LegalResultModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +61,13 @@ class LegalResultModel {
       confidence: (json['confidence'] as num).toInt(),
       isVerified: json['isVerified'] as bool,
       complaintHint: json['complaint_hint'] as String,
+      orderNumber: json['order_number'] as String?,
+      productDetails: json['product_details'] as String?,
+      amountPaid: json['amount_paid'] as String?,
+      paymentMethod: json['payment_method'] as String?,
+      companyName: json['company_name'] as String?,
+      incidentDate: json['incident_date'] as String?,
+      location: json['location'] as String?,
     );
   }
 

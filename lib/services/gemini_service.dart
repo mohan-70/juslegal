@@ -15,17 +15,43 @@ You help Indian citizens understand their rights under:
 - Motor Vehicles Act 1988
 - Insurance Regulatory and Development Authority (IRDA) guidelines
 
-For every query, always respond with these exact sections:
-1. APPLICABLE LAW — Specific act name and section numbers that apply
-2. YOUR RIGHTS — What the user is legally entitled to in this situation
-3. ACTION PLAN — Numbered step-by-step actions to take (be specific)
-4. AUTHORITY TO CONTACT — Exact body to approach (NCDRC, RBI Ombudsman, SEBI, RERA etc.) with how to contact them
-5. TIMELINE — Realistic timeframe for resolution
-6. SUCCESS PROBABILITY — Honest assessment (High/Medium/Low) with reason
-7. DO YOU NEED A LAWYER — Yes/No with reason
+For every query, analyze the user's problem and provide a JSON response with these exact fields:
+- category: The problem category
+- applicable_law: Specific act name and section numbers that apply
+- law_summary: Brief summary of the applicable law
+- user_rights: What the user is legally entitled to
+- steps: Array of numbered step-by-step actions to take
+- authorities: Array of objects with authority name and contact details
+- documents_required: Array of required documents
+- physical_visit_required: Boolean indicating if physical visit is needed
+- physical_visit_instructions: Instructions for physical visit (null if not required)
+- confidence: Confidence score 0-100
+- isVerified: Boolean indicating if information is verified
+- complaint_hint: Brief hint for filing complaint
+- order_number: Order/transaction number if mentioned (null if not)
+- product_details: Description of product/service purchased (null if not)
+- amount_paid: Amount paid with currency (null if not)
+- payment_method: Payment method used (null if not)
+- company_name: Name of company/platform involved (null if not)
+- incident_date: Date when incident occurred (null if not)
+- location: Location where incident occurred (null if not)
 
 Keep language simple, practical, and in plain English.
 Always end with: ⚠️ This is AI-generated guidance only and does not constitute legal advice. Consult a qualified advocate for legal proceedings.
+""";
+
+const String _complaintDetailsPrompt = """
+Extract the following details from the user's complaint description. If a detail is not mentioned, set it to null:
+
+- order_number: Order/transaction number (e.g., "order #12345", "transaction ID ABC123")
+- product_details: Description of product/service (e.g., "iPhone 15", "hotel booking", "car repair")
+- amount_paid: Amount paid with currency (e.g., "₹5000", "$100")
+- payment_method: Payment method used (e.g., "UPI", "credit card", "cash", "net banking")
+- company_name: Name of company/platform (e.g., "Amazon", "Flipkart", "Meesho")
+- incident_date: Date of incident (e.g., "15 Jan 2024", "yesterday")
+- location: Location of incident (e.g., "Mumbai", "online")
+
+Return only a JSON object with these keys.
 """; 
 
 class GeminiService { 
@@ -107,7 +133,7 @@ class GeminiService {
       }
       
       if (kDebugMode) print('[GeminiService] Generating content with Gemini...');
-      final prompt = 'Category: $category\n\nUser Problem: $problem\n\nProvide a JSON response with these exact fields: category, applicable_law, law_summary, user_rights, steps (array), authorities (array), documents_required (array), physical_visit_required (boolean), physical_visit_instructions (string or null), confidence (0-100), isVerified (boolean), complaint_hint (string).'; 
+      final prompt = 'Category: $category\n\nUser Problem: $problem'; 
       final response = await _model!.generateContent([Content.text(prompt)]); 
       final text = response.text; 
       
@@ -190,6 +216,13 @@ class GeminiService {
       'confidence': 75,
       'isVerified': false,
       'complaint_hint': 'Be specific about dates, amounts, and communication attempts',
+      'order_number': null,
+      'product_details': null,
+      'amount_paid': null,
+      'payment_method': null,
+      'company_name': null,
+      'incident_date': null,
+      'location': null,
       '_model': 'gemini-2.0-flash',
       '_provider': 'google',
     };

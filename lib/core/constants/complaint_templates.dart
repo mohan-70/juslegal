@@ -19,7 +19,7 @@ I, [Your Name], residing at [Your Address], am writing to file a formal complain
 **Order Details:**
 - Order Number: [Order Number]
 - Product/Service: [Product Details]
-- Amount Paid: ₹[Amount]
+- Amount Paid: [Amount]
 - Payment Method: [Payment Method]
 
 **Detailed Description of the Problem:**

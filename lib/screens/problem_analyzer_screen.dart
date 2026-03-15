@@ -78,11 +78,11 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
     print('📝 Text length: ${text.length}');
     print('📂 Category: $_category');
     
-    if (text.length < 30) {
+    if (text.length < 10) {
       print('❌ Text too short, showing error');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter at least 30 characters to analyze your problem.'),
+          content: Text('Please enter at least 10 characters to analyze your problem.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -126,7 +126,7 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
   @override
   Widget build(BuildContext context) {
     final textLength = _controller.text.trim().length;
-    final valid = textLength >= 30 && !_isAnalyzing;
+    final valid = textLength >= 10 && !_isAnalyzing;
     print('🔍 Button state - Text length: $textLength, Valid: $valid, Analyzing: $_isAnalyzing');
     return Scaffold(
       appBar: AppBar(
@@ -178,8 +178,8 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      textLength < 30 
-                          ? 'Please enter at least ${30 - textLength} more characters'
+                      textLength < 10 
+                          ? 'Please enter at least ${10 - textLength} more characters'
                           : 'Please wait for analysis to complete',
                       style: TextStyle(
                         fontSize: 12,
