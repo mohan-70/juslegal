@@ -5,16 +5,20 @@ import '../core/exceptions/ai_exceptions.dart';
 import 'gemini_service.dart';
 import 'cloudflare_service.dart';
 import 'lkb_service.dart';
+import 'mock_ai_service.dart';
 
 class AIService {
   late final GeminiService _geminiService;
   late final CloudflareService _cloudflareService;
   late final LKBService _lkbService;
+  late final MockAIService _mockService;
+  bool _useMockService = false;
 
   AIService() {
     _geminiService = GeminiService();
     _cloudflareService = CloudflareService();
     _lkbService = LKBService();
+    _mockService = MockAIService();
   }
 
   Future<void> initialize() async {
@@ -29,6 +33,12 @@ class AIService {
 
   Future<Map<String, dynamic>> analyzeProblem(
       String problemText, String category) async {
+    // If all real services failed, use mock service
+    if (_useMockService) {
+      if (kDebugMode) print('[AIService] Using mock service for analysis');
+      return await _mockService.analyzeProblem(problemText, category);
+    }
+
     // 1. Try Gemini first (direct, domain-restricted key)
     try {
       if (kDebugMode) print('Attempting analysis with Gemini 2.0 Flash');
@@ -81,9 +91,10 @@ class AIService {
       if (kDebugMode) print('[AIService] All fallbacks failed: $e');
     }
 
-    // 5. All failed - throw user-friendly exception
-    throw Exception(
-        'Our AI services are temporarily unavailable. Please try again in a few minutes.');
+    // 5. All real services failed - switch to mock service for development
+    if (kDebugMode) print('[AIService] All real services failed, switching to mock service');
+    _useMockService = true;
+    return await _mockService.analyzeProblem(problemText, category);
   }
 
   // Backward compatibility method

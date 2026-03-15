@@ -5,6 +5,7 @@ import '../providers/problem_provider.dart';
 import '../providers/ai_provider.dart';
 import '../widgets/complaint_button.dart';
 import '../widgets/loading_message_widget.dart';
+import '../core/constants/app_colors.dart';
 
 class ProblemAnalyzerScreen extends ConsumerStatefulWidget {
   final String? initialCategory;
@@ -124,7 +125,9 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final valid = _controller.text.trim().length >= 30;
+    final textLength = _controller.text.trim().length;
+    final valid = textLength >= 30 && !_isAnalyzing;
+    print('🔍 Button state - Text length: $textLength, Valid: $valid, Analyzing: $_isAnalyzing');
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -145,8 +148,19 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
               decoration: InputDecoration(
                 hintText:
                     'Describe your problem in detail...\n${_getCategoryExample()}',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                ),
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (value) {
+                setState(() {
+                  // Force rebuild to update button state
+                });
+              },
             ),
             const SizedBox(height: 8),
             Align(
@@ -154,10 +168,28 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
               child: Text('${_controller.text.length}/1000'),
             ),
             const Spacer(),
-            ComplaintButton(
-                label: _isAnalyzing ? '' : 'Analyze My Problem',
-                onPressed: _analyze,
-                enabled: valid && !_isAnalyzing),
+            Column(
+              children: [
+                ComplaintButton(
+                    label: _isAnalyzing ? '' : 'Analyze My Problem',
+                    onPressed: _analyze,
+                    enabled: valid),
+                if (!valid && textLength > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      textLength < 30 
+                          ? 'Please enter at least ${30 - textLength} more characters'
+                          : 'Please wait for analysis to complete',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+              ],
+            ),
             if (_isAnalyzing)
               const Padding(
                 padding: EdgeInsets.all(16),

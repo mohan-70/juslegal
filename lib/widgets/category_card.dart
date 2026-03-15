@@ -106,6 +106,7 @@ class _CategoryCardState extends State<CategoryCard>
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         // Icon Container with Animation
                         AnimatedContainer(

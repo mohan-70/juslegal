@@ -30,8 +30,7 @@ Always end with: ⚠️ This is AI-generated guidance only and does not constitu
 
 class GeminiService { 
   String? _apiKey;
-
-  late final GenerativeModel _model; 
+  GenerativeModel? _model;
 
   Future<void> initialize() async {
     // Try to get API key from environment variable or platform-specific secure storage
@@ -71,11 +70,18 @@ class GeminiService {
  
   Future<Map<String, dynamic>> analyze(String problem, String category) async { 
     try { 
+      if (kDebugMode) print('[GeminiService] Starting analysis for: ${problem.substring(0, 50)}...');
+      
       // For web platform, try to use API key from .env if available
-      if (kIsWeb) {
+      if (kIsWeb && _model == null) {
         try {
+          if (kDebugMode) print('[GeminiService] Loading .env file for web...');
           await dotenv.load(fileName: ".env");
           _apiKey = dotenv.env['GEMINI_API_KEY'];
+          
+          if (kDebugMode) print('[GeminiService] API key found: ${_apiKey != null ? "YES" : "NO"}');
+          if (kDebugMode) print('[GeminiService] API key length: ${_apiKey?.length ?? 0}');
+          
           if (_apiKey != null && _apiKey!.isNotEmpty) {
             // Initialize model for web if API key is available
             _model = GenerativeModel(
@@ -87,24 +93,29 @@ class GeminiService {
                 maxOutputTokens: 1024,
               ),
             );
+            if (kDebugMode) print('[GeminiService] Web model initialized successfully');
+          } else {
+            if (kDebugMode) print('[GeminiService] No API key found in .env file');
           }
         } catch (e) {
           if (kDebugMode) print('[GeminiService] Web initialization failed: $e');
         }
       }
       
-      if (_apiKey == null) {
-        throw Exception('Gemini service not initialized');
+      if (_model == null) {
+        throw Exception('Gemini service not initialized - no model available');
       }
       
+      if (kDebugMode) print('[GeminiService] Generating content with Gemini...');
       final prompt = 'Category: $category\n\nUser Problem: $problem\n\nProvide a JSON response with these exact fields: category, applicable_law, law_summary, user_rights, steps (array), authorities (array), documents_required (array), physical_visit_required (boolean), physical_visit_instructions (string or null), confidence (0-100), isVerified (boolean), complaint_hint (string).'; 
-      final response = await _model.generateContent([Content.text(prompt)]); 
+      final response = await _model!.generateContent([Content.text(prompt)]); 
       final text = response.text; 
       
       if (text == null || text.trim().isEmpty) { 
         throw Exception('Empty response from Gemini'); 
       }
       
+      if (kDebugMode) print('[GeminiService] Got response from Gemini, parsing...');
       // Parse the response to match expected format
       return _parseGeminiResponse(text, category);
     } catch (e) { 
