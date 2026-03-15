@@ -63,129 +63,74 @@ class _CategoryCardState extends State<CategoryCard>
   @override
   Widget build(BuildContext context) {
     return AppAnimations.staggeredListItem(
-      Card(
-        elevation: _isHovered ? 8 : 4,
-        shadowColor: AppColors.shadow,
-        surfaceTintColor: AppColors.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: _isHovered ? AppColors.primary : AppColors.border,
-            width: _isHovered ? 2 : 1,
-          ),
+      Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: InkWell(
-          onTap: () {
-            _animationController.forward().then((_) {
-              _animationController.reverse();
-            });
-            widget.onTap();
-          },
-          onHover: (hovering) {
-            setState(() {
-              _isHovered = hovering;
-            });
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _scaleAnimation.value,
-                child: Transform.rotate(
-                  angle: _rotationAnimation.value,
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon and title section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: _isHovered
-                          ? AppColors.cardGradient
-                          : const LinearGradient(
-                              colors: [AppColors.surface, AppColors.surface],
-                            ),
+                      color: const Color(0xFFF0F4FF),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Icon Container with Animation
-                        AnimatedContainer(
-                          duration: AppAnimations.fast,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: _isHovered
-                                ? AppColors.heroGradient
-                                : LinearGradient(
-                                    colors: [
-                                      AppColors.trustNavy.withOpacity(0.1),
-                                      AppColors.trustNavy.withOpacity(0.05),
-                                    ],
-                                  ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: _isHovered
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.trustNavy.withOpacity(0.2),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Icon(
-                            widget.icon,
-                            color: _isHovered ? AppColors.surfaceWhite : AppColors.trustNavy,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Title with Animation
-                        AnimatedDefaultTextStyle(
-                          duration: AppAnimations.fast,
-                          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                            color: _isHovered ? AppColors.trustNavy : AppColors.textDarkGrey,
-                            fontWeight: FontWeight.w700,
-                            fontSize: _isHovered ? 17 : 16,
-                          ),
-                          child: Text(widget.title),
-                        ),
-                        const SizedBox(height: 8),
-                        
-                        // Description with Animation
-                        AnimatedDefaultTextStyle(
-                          duration: AppAnimations.fast,
-                          style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                            color: AppColors.textMediumGrey,
-                            height: 1.4,
-                            fontSize: _isHovered ? 13 : 12,
-                          ),
-                          child: Text(
-                            widget.description,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        
-                        const Spacer(),
-                        
-                        // Arrow Indicator
-                        AnimatedAlign(
-                          duration: AppAnimations.fast,
-                          alignment: _isHovered ? Alignment.centerRight : Alignment.center,
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            color: _isHovered ? AppColors.trustNavy : AppColors.textMediumGrey,
-                            size: _isHovered ? 16 : 14,
-                          ),
-                        ),
-                      ],
+                    child: Icon(
+                      widget.icon,
+                      color: const Color(0xFF1E3A8A),
+                      size: 28,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Yellow stripe at bottom only
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF3CD),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
                 ),
-              );
-            },
-          ),
+              ),
+              child: Text(
+                widget.description,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF664D03),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       widget.index,
