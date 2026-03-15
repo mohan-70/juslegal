@@ -7,7 +7,7 @@ class MockAIService {
 
   Future<Map<String, dynamic>> analyzeProblem(String problemText, String category) async {
     // Simulate API delay
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(milliseconds: 500));
     
     if (kDebugMode) print('[MockAIService] Analyzing: $category - $problemText');
 

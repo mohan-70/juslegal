@@ -20,18 +20,9 @@ class ResultScreen extends ConsumerStatefulWidget {
 class _ResultScreenState extends ConsumerState<ResultScreen>
     with TickerProviderStateMixin {
   late AnimationController _bannerController;
-  late AnimationController _loadingController;
   late Animation<Offset> _bannerAnimation;
   final List<bool> _expandedSteps = [];
-  bool _isLoading = true;
-  int _loadingMessageIndex = 0;
-  Timer? _loadingTimer;
-
-  final List<String> _loadingMessages = [
-    'Analyzing your situation...',
-    'Checking applicable laws...',
-    'Preparing your action plan...',
-  ];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -48,56 +39,23 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
       curve: Curves.easeOutQuart,
     ));
 
-    _loadingController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
+    // Initialize expanded steps state
+    final result = ref.read(lastResultProvider);
+    if (result != null) {
+      _expandedSteps.addAll(List.generate(result.steps.length, (_) => false));
+    }
 
-    // Cycle loading messages every 3 seconds
-    _loadingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (mounted) {
-        setState(() {
-          _loadingMessageIndex =
-              (_loadingMessageIndex + 1) % _loadingMessages.length;
-        });
-      } else {
-        // Cancel timer if widget is no longer mounted
-        timer.cancel();
-      }
-    });
-
-    // Initialize loading state
-    _simulateLoading();
-
-    // Start banner animation after loading
-    Future.delayed(const Duration(seconds: 4), () {
+    // Start banner animation
+    Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) {
         _bannerController.forward();
       }
     });
   }
 
-  void _simulateLoading() async {
-    await Future.delayed(const Duration(seconds: 4));
-    if (mounted) {
-      _loadingTimer?.cancel();
-      setState(() {
-        _isLoading = false;
-        // Initialize expanded steps state
-        final result = ref.read(lastResultProvider);
-        if (result != null) {
-          _expandedSteps
-              .addAll(List.generate(result.steps.length, (_) => false));
-        }
-      });
-    }
-  }
-
   @override
   void dispose() {
     _bannerController.dispose();
-    _loadingController.dispose();
-    _loadingTimer?.cancel();
     super.dispose();
   }
 
@@ -256,44 +214,11 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
     return 'Weak Case';
   }
 
-  Widget _buildLoadingState() {
-    return Container(
-      color: AppColors.backgroundOffWhite,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(
-              color: AppColors.trustNavy,
-            ),
-            const SizedBox(height: 24),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 500),
-              child: Text(
-                _loadingMessages[_loadingMessageIndex],
-                key: ValueKey<int>(_loadingMessageIndex),
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppColors.trustNavy,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final result = ref.watch(lastResultProvider);
     if (result == null) {
       return const Scaffold(body: Center(child: Text('No analysis available')));
-    }
-
-    if (_isLoading) {
-      return _buildLoadingState();
     }
 
     return Scaffold(
