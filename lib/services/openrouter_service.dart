@@ -1,49 +1,97 @@
 import 'dart:convert';
-import 'dart:async';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/constants/ai_constants.dart';
 import '../core/exceptions/ai_exceptions.dart';
 
 class OpenRouterService {
-  static const String modelName = AIConstants.openRouterModel;
-  late final FirebaseFunctions _functions;
+  late final Dio _dio;
 
   OpenRouterService() {
-    _functions = FirebaseFunctions.instance;
+    _dio = Dio(BaseOptions(
+      baseUrl: AIConstants.openRouterBaseUrl,
+      connectTimeout: const Duration(seconds: AIConstants.timeoutSeconds),
+      receiveTimeout: const Duration(seconds: AIConstants.timeoutSeconds),
+      headers: {
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://juslegal-2196.web.app',
+        'X-Title': 'JusLegal'
+      },
+    ));
   }
 
-  Future<Map<String, dynamic>> analyze(String systemPrompt, String userMessage, {String category = 'general'}) async {
+  Future<String> _getApiKey() async {
+    await dotenv.load(fileName: ".env");
+    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty || apiKey == 'your_openrouter_api_key_here') {
+      throw ApiKeyException('OpenRouter API Key not found or invalid');
+    }
+    return apiKey;
+  }
+
+  Future<Map<String, dynamic>> analyze(String systemPrompt, String problemText, {String category = 'general'}) async {
     try {
-      final callable = _functions.httpsCallable('callOpenRouter');
-      final result = await callable.call({
-        'prompt': userMessage,
-        'category': category,
-      });
-
-      if (result.data == null) {
-        throw ParseException('No response from server');
-      }
-
-      final responseData = result.data as Map<String, dynamic>;
+      final apiKey = await _getApiKey();
       
-      if (responseData['success'] != true) {
-        throw NetworkException('Server error: ${responseData['error'] ?? 'Unknown error'}');
-      }
+      final response = await _dio.post(
+        '', // URL is set in BaseOptions
+        options: Options(headers: {'Authorization': 'Bearer $apiKey'}),
+        data: {
+          'model': AIConstants.openRouterModel,
+          'messages': [
+            {'role': 'system', 'content': systemPrompt},
+            {'role': 'user', 'content': 'Category: $category\n\nProblem: $problemText'},
+          ],
+          'temperature': AIConstants.temperature,
+          'max_tokens': AIConstants.maxTokens,
+          'top_p': AIConstants.topP,
+          'stream': false,
+        },
+      );
 
-      final data = responseData['data'] as Map<String, dynamic>;
-      
-      if (data['choices'] == null || (data['choices'] as List).isEmpty) {
-        throw ParseException('No choices returned from OpenRouter API');
-      }
+      return _parseJsonResponse(response, 'openrouter', AIConstants.openRouterModel);
+    } catch (e) {
+      _handleDioError(e, 'OpenRouter');
+    }
+  }
 
-      final choice = (data['choices'] as List)[0] as Map<String, dynamic>;
-      final message = choice['message'] as Map<String, dynamic>;
-      final content = message['content'] as String;
+  Future<String> generateRaw(String systemPrompt, String prompt) async {
+    try {
+      final apiKey = await _getApiKey();
       
-      // Handle content
+      final response = await _dio.post(
+        '', // URL is set in BaseOptions
+        options: Options(headers: {'Authorization': 'Bearer $apiKey'}),
+        data: {
+          'model': AIConstants.openRouterModel,
+          'messages': [
+            if (systemPrompt.isNotEmpty) {'role': 'system', 'content': systemPrompt},
+            {'role': 'user', 'content': prompt},
+          ],
+          'temperature': AIConstants.temperature,
+          'max_tokens': AIConstants.maxTokens,
+          'top_p': AIConstants.topP,
+          'stream': false,
+        },
+      );
+
+      return _parseRawResponse(response);
+    } catch (e) {
+      _handleDioError(e, 'OpenRouter');
+    }
+  }
+
+  Map<String, dynamic> _parseJsonResponse(Response response, String provider, String modelName) {
+    if (response.statusCode == 200) {
+      final data = response.data;
+      final choices = data['choices'] as List?;
+      if (choices == null || choices.isEmpty) {
+        throw ParseException('No choices returned from $provider API');
+      }
+      
+      final content = choices[0]['message']['content'] as String;
       String cleanContent = content;
       
-      // Strip markdown fences if present
       if (cleanContent.startsWith('```json')) {
         cleanContent = cleanContent.substring(7);
       }
@@ -54,29 +102,44 @@ class OpenRouterService {
 
       try {
         final parsedJson = jsonDecode(cleanContent) as Map<String, dynamic>;
-        // Add model metadata
         parsedJson['_model'] = modelName;
-        parsedJson['_provider'] = 'openrouter';
+        parsedJson['_provider'] = provider;
         return parsedJson;
       } catch (e) {
         throw ParseException('Failed to parse JSON response: $e');
       }
-      
-    } on FirebaseFunctionsException catch (e) {
-      if (e.code == 'resource-exhausted') {
-        throw RateLimitException('Rate limit exceeded', 'OpenRouter');
-      } else if (e.code == 'permission-denied') {
-        throw ApiKeyException('OpenRouter');
-      } else if (e.code == 'unavailable') {
-        throw NetworkException('Service unavailable');
-      } else {
-        throw NetworkException('Firebase Functions error: ${e.message}');
-      }
-    } catch (e) {
-      if (e is RateLimitException || e is ApiKeyException || e is ParseException || e is NetworkException) {
-        rethrow;
-      }
-      throw ParseException('Unexpected error: $e');
+    } else {
+      throw NetworkException('HTTP Error: ${response.statusCode}');
     }
+  }
+
+  String _parseRawResponse(Response response) {
+    if (response.statusCode == 200) {
+      final data = response.data;
+      final choices = data['choices'] as List?;
+      if (choices == null || choices.isEmpty) {
+        throw ParseException('No choices returned from API');
+      }
+      return (choices[0]['message']['content'] as String).trim();
+    } else {
+      throw NetworkException('HTTP Error: ${response.statusCode}');
+    }
+  }
+
+  Never _handleDioError(dynamic e, String provider) {
+    if (e is DioException) {
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+        throw NetworkException('Request timeout');
+      } else if (e.response?.statusCode == 429) {
+        throw RateLimitException('Rate limit exceeded', provider);
+      } else if (e.response?.statusCode == 401) {
+        throw ApiKeyException('Invalid $provider API Key');
+      } else {
+        throw NetworkException('Network error: ${e.message}');
+      }
+    } else if (e is RateLimitException || e is ApiKeyException || e is ParseException || e is NetworkException) {
+      throw e;
+    }
+    throw ParseException('Unexpected error: $e');
   }
 }

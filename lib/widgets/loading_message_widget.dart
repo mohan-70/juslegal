@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class LoadingMessageWidget extends StatefulWidget {
-  const LoadingMessageWidget({super.key});
+  final String? message;
+  const LoadingMessageWidget({super.key, this.message});
 
   @override
   State<LoadingMessageWidget> createState() => _LoadingMessageWidgetState();
@@ -10,11 +11,7 @@ class LoadingMessageWidget extends StatefulWidget {
 
 class _LoadingMessageWidgetState extends State<LoadingMessageWidget>
     with TickerProviderStateMixin {
-  final List<String> _messages = [
-    'Analyzing your situation...',
-    'Checking applicable laws...',
-    'Preparing your action plan...',
-  ];
+  late final List<String> _messages;
   
   int _currentIndex = 0;
   late Timer _timer;
@@ -24,6 +21,14 @@ class _LoadingMessageWidgetState extends State<LoadingMessageWidget>
   @override
   void initState() {
     super.initState();
+    _messages = widget.message != null 
+        ? [widget.message!] 
+        : [
+            'Analyzing your situation...',
+            'Checking applicable laws...',
+            'Preparing your action plan...',
+          ];
+          
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -38,18 +43,25 @@ class _LoadingMessageWidgetState extends State<LoadingMessageWidget>
 
     _fadeController.forward();
     
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      setState(() {
-        _currentIndex = (_currentIndex + 1) % _messages.length;
-        _fadeController.reset();
-        _fadeController.forward();
+    // Only cycle messages if there are multiple
+    if (_messages.length > 1) {
+      _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+        if (mounted) {
+          setState(() {
+            _currentIndex = (_currentIndex + 1) % _messages.length;
+            _fadeController.reset();
+            _fadeController.forward();
+          });
+        }
       });
-    });
+    }
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    if (_messages.length > 1) {
+      _timer.cancel();
+    }
     _fadeController.dispose();
     super.dispose();
   }

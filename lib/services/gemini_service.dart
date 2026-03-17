@@ -49,13 +49,8 @@ class GeminiService {
     try {
       // Load .env file
       await dotenv.load(fileName: ".env");
-      
-      // For web, we'll use a proxy approach - don't expose API key directly
-      if (kIsWeb) {
-        throw Exception('Gemini API should be called through proxy on web platform');
-      }
-      
-      // For mobile builds, get from .env file or environment
+
+      // For web & mobile, get from .env file or environment
       _apiKey = dotenv.env['GEMINI_API_KEY'] ?? const String.fromEnvironment('GEMINI_API_KEY');
       
       if (_apiKey == null || _apiKey!.isEmpty) {
@@ -73,10 +68,7 @@ class GeminiService {
       );
     } catch (e) {
       if (kDebugMode) print('[GeminiService] Initialization failed: $e');
-      // Don't rethrow for web platform - allow fallback to other services
-      if (!kIsWeb) {
-        rethrow;
-      }
+      rethrow;
     }
   }
   
@@ -84,34 +76,8 @@ class GeminiService {
     try {
       if (kDebugMode) print('[GeminiService] Starting analysis for: ${problem.substring(0, 50)}...');
       
-      // For web platform, try to use API key from .env if available
-      if (kIsWeb && _model == null) {
-        try {
-          if (kDebugMode) print('[GeminiService] Loading .env file for web...');
-          await dotenv.load(fileName: ".env");
-          _apiKey = dotenv.env['GEMINI_API_KEY'];
-
-          if (kDebugMode) print('[GeminiService] API key found: ${_apiKey != null ? "YES" : "NO"}');
-          if (kDebugMode) print('[GeminiService] API key length: ${_apiKey?.length ?? 0}');
-          
-          if (_apiKey != null && _apiKey!.isNotEmpty) {
-            // Initialize model for web if API key is available
-            _model = GenerativeModel(
-              model: 'gemini-2.0-flash',
-              apiKey: _apiKey!,
-              systemInstruction: Content.system(_systemPrompt),
-              generationConfig: GenerationConfig(
-                temperature: 0.3,
-                maxOutputTokens: 1024,
-              ),
-            );
-            if (kDebugMode) print('[GeminiService] Web model initialized successfully');
-          } else {
-            if (kDebugMode) print('[GeminiService] No API key found in .env file');
-          }
-        } catch (e) {
-          if (kDebugMode) print('[GeminiService] Web initialization failed: $e');
-        }
+      if (_apiKey == null || _model == null) {
+        await initialize();
       }
       
       if (_model == null) {
@@ -135,6 +101,30 @@ class GeminiService {
       rethrow;
     }
   }
+
+  Future<String> generateRaw(String prompt) async {
+    try {
+      if (_apiKey == null || _model == null) {
+        await initialize();
+      }
+
+      if (_model == null) {
+        throw Exception('Gemini service not initialized');
+      }
+
+      final response = await _model!.generateContent([Content.text(prompt)]);
+      final text = response.text;
+
+      if (text == null || text.trim().isEmpty) {
+        throw Exception('Empty response from Gemini');
+      }
+      return text.trim();
+    } catch (e) {
+      if (kDebugMode) print('[GeminiService] Error generating raw text: $e');
+      rethrow;
+    }
+  }
+
   Map<String, dynamic> _parseGeminiResponse(String response, String category) {
     try {
       // Try to extract JSON from the response

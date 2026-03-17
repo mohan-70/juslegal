@@ -19,10 +19,7 @@ Future<void> main() async {
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    // For web, this is expected since we'll use Cloudflare proxy
-    if (!kIsWeb) {
-      rethrow;
-    }
+    if (kDebugMode) print('Could not load .env file: $e');
   }
   
   try {

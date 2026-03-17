@@ -3,20 +3,23 @@ import 'package:flutter/foundation.dart';
 import '../core/constants/api_constants.dart';
 import '../core/exceptions/ai_exceptions.dart';
 import 'gemini_service.dart';
-import 'cloudflare_service.dart';
+import 'groq_service.dart';
+import 'openrouter_service.dart';
 import 'lkb_service.dart';
 import 'mock_ai_service.dart';
 
 class AIService {
   late final GeminiService _geminiService;
-  late final CloudflareService _cloudflareService;
+  late final GroqService _groqService;
+  late final OpenRouterService _openRouterService;
   late final LKBService _lkbService;
   late final MockAIService _mockService;
   bool _useMockService = false;
 
   AIService() {
     _geminiService = GeminiService();
-    _cloudflareService = CloudflareService();
+    _groqService = GroqService();
+    _openRouterService = OpenRouterService();
     _lkbService = LKBService();
     _mockService = MockAIService();
   }
@@ -63,13 +66,13 @@ class AIService {
     final String userMessage = _buildUserMessage(category, problemText);
     final String fullPrompt = '$systemPrompt\n\n$userMessage';
 
-    // 3. Fallback to Cloudflare Worker (Groq)
+    // 3. Fallback to Groq
     try {
       if (kDebugMode) {
-        debugPrint('Attempting analysis with Groq via Cloudflare Worker');
+        debugPrint('Attempting analysis with Groq direct API');
       }
       final result = await _tryWithRetry(
-        () => _cloudflareService.callGroq(fullPrompt, category: category),
+        () => _groqService.analyze(systemPrompt, problemText, category: category),
         'Groq',
       );
       if (kDebugMode) print('✅ Groq fallback successful');
@@ -81,10 +84,10 @@ class AIService {
     // 4. Try OpenRouter as second fallback
     try {
       if (kDebugMode) {
-        debugPrint('Attempting analysis with OpenRouter via Cloudflare Worker');
+        debugPrint('Attempting analysis with OpenRouter direct API');
       }
       final result = await _tryWithRetry(
-        () => _cloudflareService.callOpenRouter(fullPrompt, category: category),
+        () => _openRouterService.analyze(systemPrompt, problemText, category: category),
         'OpenRouter',
       );
       if (kDebugMode) print('✅ OpenRouter fallback successful');
@@ -103,6 +106,133 @@ class AIService {
   Future<Map<String, dynamic>> analyze(
       {required String problemText, required String selectedCategory}) async {
     return await analyzeProblem(problemText, selectedCategory);
+  }
+
+  /// Generates a formal legal letter/complaint/email using AI.
+  /// [letterType]  e.g. 'email', 'police', 'consumer_court'
+  /// Returns the full letter text as a string.
+  Future<String> generateLetter({
+    required String letterType,
+    required String category,
+    required String problemDescription,
+    required String userRights,
+    required String applicableLaw,
+    required List<String> steps,
+    required String senderName,
+    required String senderAddress,
+    required String opponentName,
+    required String incidentDate,
+  }) async {
+    final prompt = _buildLetterPrompt(
+      letterType: letterType,
+      category: category,
+      problemDescription: problemDescription,
+      userRights: userRights,
+      applicableLaw: applicableLaw,
+      steps: steps,
+      senderName: senderName,
+      senderAddress: senderAddress,
+      opponentName: opponentName,
+      incidentDate: incidentDate,
+    );
+
+    // 1. Try Gemini first (works on mobile; web may skip)
+    if (_geminiService != null) {
+      try {
+        if (kDebugMode) print('[AIService] Generating letter with Gemini...');
+        final result = await _geminiService.generateRaw(prompt);
+        if (kDebugMode) print('[AIService] ✅ Gemini letter generation successful');
+        return result;
+      } catch (e) {
+        if (kDebugMode) print('[AIService] Gemini letter generation failed: $e');
+      }
+    }
+
+    // 2. Try Groq directly
+    try {
+      if (kDebugMode) print('[AIService] Generating letter with Groq...');
+      final result = await _groqService.generateRaw('', prompt);
+      if (kDebugMode) print('[AIService] ✅ Groq letter generation successful');
+      return result;
+    } catch (e) {
+      if (kDebugMode) print('[AIService] Groq letter generation failed: $e');
+    }
+
+    // 3. Try OpenRouter directly
+    try {
+      if (kDebugMode) print('[AIService] Generating letter with OpenRouter...');
+      final result = await _openRouterService.generateRaw('', prompt);
+      if (kDebugMode) print('[AIService] ✅ OpenRouter letter generation successful');
+      return result;
+    } catch (e) {
+      if (kDebugMode) print('[AIService] OpenRouter letter generation failed: $e');
+    }
+
+    throw Exception('All AI services failed to generate the letter. Please check your internet connection and try again.');
+  }
+
+  String _buildLetterPrompt({
+    required String letterType,
+    required String category,
+    required String problemDescription,
+    required String userRights,
+    required String applicableLaw,
+    required List<String> steps,
+    required String senderName,
+    required String senderAddress,
+    required String opponentName,
+    required String incidentDate,
+  }) {
+    final typeLabel = {
+      'email': 'a formal consumer complaint email',
+      'police': 'a formal police complaint letter',
+      'consumer_court': 'a formal consumer court complaint draft',
+    }[letterType] ?? 'a formal complaint letter';
+
+    final stepsText = steps.isNotEmpty
+        ? steps.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')
+        : 'No specific steps provided.';
+
+    final effectiveSender = senderName.trim().isEmpty ? '[Your Full Name]' : senderName.trim();
+    final effectiveAddress = senderAddress.trim().isEmpty ? '[Your Address]' : senderAddress.trim();
+    final effectiveOpponent = opponentName.trim().isEmpty ? '[Respondent Name/Company]' : opponentName.trim();
+
+    return '''You are a professional Indian legal writer. Write $typeLabel based on the details below.
+
+IMPORTANT RULES:
+- Write ONLY the letter/document itself — no explanations, no preamble, no notes after the letter
+- Use formal, professional legal language appropriate for India
+- Fill in ALL details using the information provided below
+- If a piece of information is not provided, use a sensible placeholder like [Your Phone Number]
+- Include proper structure: To/From addresses, Subject, Date, Body paragraphs, Closing
+- Cite the specific law/act provided
+- Keep it professional and assertive but not aggressive
+- End with a clear demand and deadline (e.g., "respond within 7 days")
+
+SENDER DETAILS:
+Name: $effectiveSender
+Address: $effectiveAddress
+
+RESPONDENT / OPPONENT:
+$effectiveOpponent
+
+INCIDENT DATE: $incidentDate
+
+PROBLEM CATEGORY: $category
+
+PROBLEM DESCRIPTION:
+$problemDescription
+
+LEGAL RIGHTS:
+$userRights
+
+APPLICABLE LAW:
+$applicableLaw
+
+RECOMMENDED ACTION STEPS:
+$stepsText
+
+Now write the complete $typeLabel:''';
   }
 
   Future<Map<String, dynamic>> _tryWithRetry(
