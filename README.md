@@ -10,11 +10,11 @@ JusLegal is an AI-powered consumer legal assistant for Indian citizens, providin
 
 ## Features
 
-- **AI-Powered Legal Analysis** - Get instant legal guidance using Cloudflare Workers with Groq AI and OpenRouter fallback
+- **AI-Powered Legal Analysis** - Multi-service AI backend with Gemini, Groq, Bytez, and OpenRouter
 - **Consumer Law Focus** - Specialized for Indian consumer protection laws and regulations
 - **Step-by-Step Guidance** - Clear action steps for resolving legal issues
 - **Authority Directory** - Contact information for relevant regulatory bodies
-- **Document Generation** - Generate complaint letters and legal documents
+- **Professional Document Generation** - Generate complaint letters and legal documents using advanced LLMs
 - **Case Management** - Save and track your legal cases
 - **Cross-Platform** - Works on Android, iOS, and Web
 - **Trust & Verification System** - Legal expert verification badges and transparent AI sourcing
@@ -75,8 +75,11 @@ To deploy the Cloudflare Worker proxy for secure API calls:
 
 The proxy will be available at `https://juslegal-proxy.workers.dev` and will handle secure API calls to Groq and OpenRouter without exposing API keys in the client-side code.
 
-**AI Services:**
-- Cloudflare Workers (Server-side) - Groq API and OpenRouter API integration
+**AI Services (Priority Order):**
+1. Gemini 2.0 Flash - Direct integration for legal analysis
+2. Groq - Fast fallback for analysis and letter generation
+3. Bytez - Meta-Llama 3 70B for letter generation (Meta-Llama-3-70B-Instruct model)
+4. OpenRouter - High-quality reasoning models as final fallback
 
 ## Prerequisites
 
@@ -100,12 +103,21 @@ Before setting up JusLegal, ensure you have:
    flutter pub get
    ```
 
-3. **Set up Firebase:**
-   - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-   - Set up Firebase Hosting and Cloud Functions
-   - Configure API keys in Firebase environment config
+3. **Set up environment variables:**
+   - Copy `.env.example` to `.env`
+   - Add your API keys:
+     ```bash
+     GEMINI_API_KEY=your_gemini_key
+     GROQ_API_KEY=your_groq_key
+     OPENROUTER_API_KEY=your_openrouter_key
+     BYTEZ_API_KEY=your_bytez_key
+     ```
 
-4. **Run the app:**
+4. **Set up Firebase (optional):**
+   - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+   - Configure Analytics and Crashlytics for error tracking
+
+5. **Run the app:**
    ```bash
    flutter run
    ```
@@ -153,30 +165,41 @@ Widget build(BuildContext context, WidgetRef ref) {
 
 ## Configuration
 
-### Firebase Setup
+### Environment Variables Setup
 
-JusLegal uses Firebase Cloud Functions to securely handle AI API calls. API keys are managed server-side and never exposed to the client.
+API keys are configured locally in the `.env` file for direct usage:
+
+| Variable | Description | Required | Source |
+|----------|-------------|----------|--------|
+| `GEMINI_API_KEY` | Google Gemini 2.0 Flash API key | Yes | [Google AI Studio](https://developers.generativeai.google.dev/gemini/docs/get-api-key) |
+| `GROQ_API_KEY` | Groq API key for fast LLM processing | Yes | [Groq Console](https://console.groq.com) |
+| `OPENROUTER_API_KEY` | OpenRouter API key for reasoning models | Yes | [OpenRouter](https://openrouter.ai) |
+| `BYTEZ_API_KEY` | Bytez API key for Meta-Llama models | Yes | [Bytez API](https://bytez.com) |
+
+**Setup Instructions:**
+```bash
+# 1. Copy the example file
+cp .env.example .env
+
+# 2. Add your API keys to .env
+GEMINI_API_KEY=your_key_here
+GROQ_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here
+BYTEZ_API_KEY=your_key_here
+```
+
+### Firebase Setup (Optional)
+
+For production deployment with Analytics and Crashlytics:
 
 1. **Firebase Project Setup:**
    - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-   - Enable Cloud Functions and Hosting
-   - Configure environment variables for API keys
+   - Enable Cloud Firestore, Analytics, and Crashlytics
+   - Download configuration files for your platform
 
-2. **Cloud Functions Deployment:**
-   ```bash
-   cd functions
-   npm install
-   firebase deploy --only functions
-   ```
-
-### Environment Variables (Server-side)
-
-API keys are now configured in Firebase Cloud Functions environment config:
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GROQ_API_KEY` | Groq API key for primary AI service | Yes |
-| `OPENROUTER_API_KEY` | OpenRouter API key for fallback AI service | Yes |
+2. **Analytics & Monitoring:**
+   - Firebase Analytics tracks user interactions and feature usage
+   - Firebase Crashlytics reports errors and crashes automatically
 
 ## Project Structure
 
@@ -198,10 +221,14 @@ juslegal/
 │   │   ├── result_screen.dart
 │   │   └── ...other screens
 │   ├── services/             # Business logic services
-│   │   ├── ai_service.dart
-│   │   ├── groq_service.dart
-│   │   ├── openrouter_service.dart
-│   │   └── lkb_service.dart
+│   │   ├── ai_service.dart         # Orchestrates all AI services
+│   │   ├── gemini_service.dart     # Gemini 2.0 Flash integration
+│   │   ├── groq_service.dart       # Groq API integration
+│   │   ├── bytez_service.dart      # Bytez API integration (Meta-Llama)
+│   │   ├── openrouter_service.dart # OpenRouter integration
+│   │   ├── lkb_service.dart        # Legal knowledge base
+│   │   ├── real_ai_service.dart    # Real AI implementation
+│   │   └── legal_compliance_service.dart # Legal validation
 │   └── widgets/              # Reusable UI components
 ├── assets/                  # Static assets
 │   ├── legal_kb.json
@@ -252,8 +279,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Support:** [coming soon]  
 
 **Special Thanks:**
-- Groq for providing the primary AI service
-- OpenRouter for providing fallback AI service
+- Google Gemini for advanced AI analysis capabilities
+- Groq for providing fast LLM inference
+- Bytez for Meta-Llama 3 70B model access
+- OpenRouter for providing high-quality reasoning models
 - Flutter community for the excellent framework
 - All contributors who help improve this project
 
