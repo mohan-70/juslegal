@@ -10,6 +10,10 @@ class AIConstants {
   static const String openRouterBaseUrl = 
       'https://openrouter.ai/api/v1/chat/completions';
   
+  // Bytez 
+  static const String bytezModel = 'meta-llama/Meta-Llama-3-70B-Instruct';
+  static const String bytezBaseUrl = 'https://api.bytez.com/v1/chat/completions';
+  
   // Shared
   static const int maxTokens = 2048;
   static const double temperature = 0.3;

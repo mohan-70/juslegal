@@ -5,6 +5,7 @@ import '../core/exceptions/ai_exceptions.dart';
 import 'gemini_service.dart';
 import 'groq_service.dart';
 import 'openrouter_service.dart';
+import 'bytez_service.dart';
 import 'lkb_service.dart';
 import 'mock_ai_service.dart';
 
@@ -12,6 +13,7 @@ class AIService {
   late final GeminiService _geminiService;
   late final GroqService _groqService;
   late final OpenRouterService _openRouterService;
+  late final BytezService _bytezService;
   late final LKBService _lkbService;
   late final MockAIService _mockService;
   bool _useMockService = false;
@@ -20,6 +22,7 @@ class AIService {
     _geminiService = GeminiService();
     _groqService = GroqService();
     _openRouterService = OpenRouterService();
+    _bytezService = BytezService();
     _lkbService = LKBService();
     _mockService = MockAIService();
   }
@@ -93,10 +96,25 @@ class AIService {
       if (kDebugMode) print('✅ OpenRouter fallback successful');
       return result;
     } catch (e) {
+      if (kDebugMode) print('[AIService] OpenRouter fallback failed, trying Bytez: $e');
+    }
+
+    // 5. Try Bytez as third fallback
+    try {
+      if (kDebugMode) {
+        debugPrint('Attempting analysis with Bytez direct API');
+      }
+      final result = await _tryWithRetry(
+        () => _bytezService.analyze(systemPrompt, problemText, category: category),
+        'Bytez',
+      );
+      if (kDebugMode) print('✅ Bytez fallback successful');
+      return result;
+    } catch (e) {
       if (kDebugMode) print('[AIService] All fallbacks failed: $e');
     }
 
-    // 5. All real services failed - switch to mock service for development
+    // 6. All real services failed - switch to mock service for development
     if (kDebugMode) print('[AIService] All real services failed, switching to mock service');
     _useMockService = true;
     return await _mockService.analyzeProblem(problemText, category);
@@ -158,7 +176,17 @@ class AIService {
       if (kDebugMode) print('[AIService] Groq letter generation failed: $e');
     }
 
-    // 3. Try OpenRouter directly
+    // 3. Try Bytez
+    try {
+      if (kDebugMode) print('[AIService] Generating letter with Bytez...');
+      final result = await _bytezService.generateRaw('', prompt);
+      if (kDebugMode) print('[AIService] ✅ Bytez letter generation successful');
+      return result;
+    } catch (e) {
+      if (kDebugMode) print('[AIService] Bytez letter generation failed: $e');
+    }
+
+    // 4. Try OpenRouter directly
     try {
       if (kDebugMode) print('[AIService] Generating letter with OpenRouter...');
       final result = await _openRouterService.generateRaw('', prompt);

@@ -4,10 +4,18 @@ class ApiConstants {
   static const String groqModel = 'llama-3.3-70b-versatile';
 
   // OpenRouter Settings
-  static const String openrouterBaseUrl = 'https://openrouter.ai/api/v1';
+  static const String openrouterBaseUrl =
+      'https://openrouter.ai/api/v1/chat/completions';
+
+  // Bytez
+  static const String bytezModel = 'meta-llama/Meta-Llama-3-70B-Instruct';
+  static const String bytezBaseUrl = 'https://api.bytez.com/v1/chat/completions';
   static const String openrouterModel = 'meta-llama/llama-3.3-70b-instruct:free';
   static const String appName = 'JusLegal';
   static const String appUrl = 'https://juslegal-2196.web.app';
+
+  // Bytez Settings
+  static const String bytezModel = 'meta-llama/Meta-Llama-3-70B-Instruct';
 
   // Shared Settings
   static const double temperature = 0.2;
