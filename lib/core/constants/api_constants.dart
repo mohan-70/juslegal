@@ -14,9 +14,6 @@ class ApiConstants {
   static const String appName = 'JusLegal';
   static const String appUrl = 'https://juslegal-2196.web.app';
 
-  // Bytez Settings
-  static const String bytezModel = 'meta-llama/Meta-Llama-3-70B-Instruct';
-
   // Shared Settings
   static const double temperature = 0.2;
   static const int maxTokens = 1200;
