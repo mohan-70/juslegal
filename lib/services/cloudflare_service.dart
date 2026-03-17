@@ -9,8 +9,8 @@ class CloudflareService {
   final Dio _dio;
 
   CloudflareService() : _dio = Dio() {
-    _dio.options.connectTimeout = Duration(seconds: _timeoutSeconds);
-    _dio.options.receiveTimeout = Duration(seconds: _timeoutSeconds);
+    _dio.options.connectTimeout = const Duration(seconds: _timeoutSeconds);
+    _dio.options.receiveTimeout = const Duration(seconds: _timeoutSeconds);
     _dio.options.headers = {
       'Content-Type': 'application/json',
     };

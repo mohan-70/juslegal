@@ -30,13 +30,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
     return widget.child;
   }
 
-  void _setError(Object error, StackTrace stackTrace) {
-    setState(() {
-      _error = error;
-      _stackTrace = stackTrace;
-    });
-  }
-
   Widget _buildErrorUI(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -73,18 +66,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
           ],
         ],
       ),
-    );
-  }
-
-  static Widget wrap({
-    required Widget child,
-    Widget Function(Object, StackTrace?)? onError,
-    Widget Function()? onRetry,
-  }) {
-    return ErrorBoundary(
-      onError: onError,
-      onRetry: onRetry,
-      child: child,
     );
   }
 }

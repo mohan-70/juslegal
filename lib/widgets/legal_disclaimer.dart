@@ -15,31 +15,33 @@ class LegalDisclaimer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: padding ?? const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.verifiedBackground.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.verifiedBadge.withOpacity(0.3),
-          width: 1,
+      decoration: const BoxDecoration(
+        color: Color(0x1A4CAF50),
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        border: Border(
+          top: BorderSide(color: Color(0x4D4CAF50), width: 1),
+          bottom: BorderSide(color: Color(0x4D4CAF50), width: 1),
+          left: BorderSide(color: Color(0x4D4CAF50), width: 1),
+          right: BorderSide(color: Color(0x4D4CAF50), width: 1),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.info_outline,
                 size: 16,
-                color: AppColors.verifiedBadge,
+                color: Color(0xFF4CAF50),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Important Legal Notice',
                   style: TextStyle(
-                    color: AppColors.textDarkGrey,
+                    color: Color(0xFF424242),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -52,8 +54,8 @@ class LegalDisclaimer extends StatelessWidget {
             showDetailed 
                 ? 'This is AI-generated legal guidance based on Indian consumer law. It is not a substitute for professional legal advice. For serious matters, court cases, or complex disputes, always consult a practicing advocate.'
                 : 'This is general legal guidance, not legal advice. Consult a lawyer for serious matters.',
-            style: TextStyle(
-              color: AppColors.textMediumGrey,
+            style: const TextStyle(
+              color: Color(0xFF757575),
               fontSize: 12,
               height: 1.4,
             ),
@@ -119,16 +121,16 @@ class LegalDisclaimer extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  color: AppColors.textDarkGrey,
+                style: const TextStyle(
+                  color: Color(0xFF424242),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 subtitle,
-                style: TextStyle(
-                  color: AppColors.textMediumGrey,
+                style: const TextStyle(
+                  color: Color(0xFF757575),
                   fontSize: 10,
                 ),
               ),

@@ -38,10 +38,6 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
   }
 
   Future<void> analyze(String problemText, String category) async {
-    print('🚀 AI Provider: Starting analysis');
-    print('📝 Problem: ${problemText.substring(0, problemText.length > 100 ? 100 : problemText.length)}...');
-    print('📂 Category: $category');
-    
     state = AsyncValue.data(AnalysisState(isLoading: true));
 
     try {
@@ -55,18 +51,13 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
       );
 
       // Initialize AI service
-      print('🔧 Initializing AI service...');
       await _aiService.initialize();
-      print('✅ AI service initialized');
 
       // Analyze the problem using backward compatibility method
-      print('🤖 Starting AI analysis...');
       final analysisResult = await _aiService.analyze(problemText: problemText, selectedCategory: category);
-      print('✅ AI analysis completed');
 
       // Convert Map to LegalResultModel
       final legalResult = _mapToLegalResultModel(analysisResult);
-      print('📋 Result mapped to LegalResultModel');
 
       // Update both new and old providers
       ref.read(lastResultProvider.notifier).state = legalResult;
@@ -84,10 +75,7 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
         result: AsyncValue.data(legalResult),
         isLoading: false,
       ));
-      print('✅ Analysis state updated successfully');
     } catch (e, stackTrace) {
-      print('❌ Analysis failed: $e');
-      print('📚 Stack trace: $stackTrace');
       
       // Log analysis error event
       await _analytics.logEvent(
@@ -99,7 +87,6 @@ class AnalysisNotifier extends AsyncNotifier<AnalysisState> {
       );
 
       String errorMessage = _getErrorMessage(e);
-      print('💬 Error message: $errorMessage');
       state = AsyncValue.error(errorMessage, stackTrace);
     }
   }

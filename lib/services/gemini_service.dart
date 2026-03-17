@@ -1,75 +1,8 @@
-// Update your category card widget with better styling
-
-Container(
-  decoration: BoxDecoration(
-    borderRadius: BorderRadius.circular(12),
-    color: Colors.white,
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.1),
-        blurRadius: 8,
-        offset: const Offset(0, 2),
-      ),
-    ],
-  ),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Icon and title section
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F4FF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: const Color(0xFF1E3A8A), size: 28),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
-      // Yellow stripe at bottom only
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFF3CD),
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(12),
-            bottomRight: Radius.circular(12),
-          ),
-        ),
-        child: Text(
-          description,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF664D03),
-          ),
-        ),
-      ),
-    ],
-  ),
-)import 'package:google_generative_ai/google_generative_ai.dart'; 
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/foundation.dart'; 
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
+
 
 const String _systemPrompt = """
 You are JusLegal, an AI legal assistant specialized in Indian consumer law.
@@ -106,20 +39,6 @@ For every query, analyze the user's problem and provide a JSON response with the
 Keep language simple, practical, and in plain English.
 Always end with: ⚠️ This is AI-generated guidance only and does not constitute legal advice. Consult a qualified advocate for legal proceedings.
 """;
-
-const String _complaintDetailsPrompt = """
-Extract the following details from the user's complaint description. If a detail is not mentioned, set it to null:
-
-- order_number: Order/transaction number (e.g., "order #12345", "transaction ID ABC123")
-- product_details: Description of product/service (e.g., "iPhone 15", "hotel booking", "car repair")
-- amount_paid: Amount paid with currency (e.g., "₹5000", "\$100")
-- payment_method: Payment method used (e.g., "UPI", "credit card", "cash", "net banking")
-- company_name: Name of company/platform (e.g., "Amazon", "Flipkart", "Meesho")
-- incident_date: Date of incident (e.g., "15 Jan 2024", "yesterday")
-- location: Location of incident (e.g., "Mumbai", "online")
-
-Return only a JSON object with these keys.
-"""; 
 
 class GeminiService { 
   String? _apiKey;
@@ -159,10 +78,10 @@ class GeminiService {
         rethrow;
       }
     }
-  } 
- 
-  Future<Map<String, dynamic>> analyze(String problem, String category) async { 
-    try { 
+  }
+  
+  Future<Map<String, dynamic>> analyze(String problem, String category) async {
+    try {
       if (kDebugMode) print('[GeminiService] Starting analysis for: ${problem.substring(0, 50)}...');
       
       // For web platform, try to use API key from .env if available
@@ -171,7 +90,7 @@ class GeminiService {
           if (kDebugMode) print('[GeminiService] Loading .env file for web...');
           await dotenv.load(fileName: ".env");
           _apiKey = dotenv.env['GEMINI_API_KEY'];
-          
+
           if (kDebugMode) print('[GeminiService] API key found: ${_apiKey != null ? "YES" : "NO"}');
           if (kDebugMode) print('[GeminiService] API key length: ${_apiKey?.length ?? 0}');
           
@@ -200,23 +119,22 @@ class GeminiService {
       }
       
       if (kDebugMode) print('[GeminiService] Generating content with Gemini...');
-      final prompt = 'Category: $category\n\nUser Problem: $problem'; 
-      final response = await _model!.generateContent([Content.text(prompt)]); 
-      final text = response.text; 
-      
-      if (text == null || text.trim().isEmpty) { 
-        throw Exception('Empty response from Gemini'); 
+      final prompt = 'Category: $category\n\nUser Problem: $problem';
+      final response = await _model!.generateContent([Content.text(prompt)]);
+      final text = response.text;
+
+      if (text == null || text.trim().isEmpty) {
+        throw Exception('Empty response from Gemini');
       }
       
       if (kDebugMode) print('[GeminiService] Got response from Gemini, parsing...');
       // Parse the response to match expected format
       return _parseGeminiResponse(text, category);
     } catch (e) { 
-      if (kDebugMode) print('[GeminiService] Error: $e'); 
-      rethrow; 
-    } 
+      if (kDebugMode) print('[GeminiService] Error: $e');
+      rethrow;
+    }
   }
-  
   Map<String, dynamic> _parseGeminiResponse(String response, String category) {
     try {
       // Try to extract JSON from the response
@@ -295,3 +213,4 @@ class GeminiService {
     };
   } 
 }
+

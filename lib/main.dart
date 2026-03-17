@@ -18,12 +18,10 @@ Future<void> main() async {
   // Load environment variables
   try {
     await dotenv.load(fileName: ".env");
-    print('✅ .env file loaded successfully');
   } catch (e) {
-    print('⚠️ Could not load .env file: $e');
     // For web, this is expected since we'll use Cloudflare proxy
     if (!kIsWeb) {
-      print('❌ .env file is required for mobile builds');
+      rethrow;
     }
   }
   
@@ -32,9 +30,7 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('✅ Firebase initialized successfully');
   } catch (e) {
-    print('❌ Firebase initialization failed: $e');
     // For web, continue without Firebase if it fails
     if (!kIsWeb) {
       rethrow;
@@ -49,7 +45,7 @@ Future<void> main() async {
       return true;
     };
   } catch (e) {
-    print('⚠️ Firebase Crashlytics initialization failed: $e');
+    // Firebase Crashlytics initialization may fail, continue gracefully
   }
   
   await Hive.initFlutter();
@@ -63,7 +59,6 @@ Future<void> main() async {
   
   final prefs = await SharedPreferences.getInstance();
   final seenOnboarding = prefs.getBool('seen_onboarding') ?? false;
-  print('🚀 Starting JusLegal App - showOnboarding: $seenOnboarding');
   runApp(ProviderScope(child: JusLegalApp(showOnboarding: !seenOnboarding)));
 }
 
@@ -74,7 +69,6 @@ class JusLegalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final router = buildRouter(showOnboarding: showOnboarding);
-    print('🏗️ Building JusLegalApp with showOnboarding: $showOnboarding');
     return MaterialApp.router(
       title: 'JusLegal',
       theme: buildAppTheme(),

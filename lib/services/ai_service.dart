@@ -65,8 +65,9 @@ class AIService {
 
     // 3. Fallback to Cloudflare Worker (Groq)
     try {
-      if (kDebugMode)
-        print('Attempting analysis with Groq via Cloudflare Worker');
+      if (kDebugMode) {
+        debugPrint('Attempting analysis with Groq via Cloudflare Worker');
+      }
       final result = await _tryWithRetry(
         () => _cloudflareService.callGroq(fullPrompt, category: category),
         'Groq',
@@ -79,8 +80,9 @@ class AIService {
 
     // 4. Try OpenRouter as second fallback
     try {
-      if (kDebugMode)
-        print('Attempting analysis with OpenRouter via Cloudflare Worker');
+      if (kDebugMode) {
+        debugPrint('Attempting analysis with OpenRouter via Cloudflare Worker');
+      }
       final result = await _tryWithRetry(
         () => _cloudflareService.callOpenRouter(fullPrompt, category: category),
         'OpenRouter',

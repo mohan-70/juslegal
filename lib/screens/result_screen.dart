@@ -22,7 +22,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
   late AnimationController _bannerController;
   late Animation<Offset> _bannerAnimation;
   final List<bool> _expandedSteps = [];
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -63,7 +62,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
     final result = ref.read(lastResultProvider);
     final problem = ref.read(problemProvider);
     if (result == null) {
-      print('❌ Cannot save case: result is null');
       return;
     }
 
@@ -86,7 +84,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
         );
       }
     } catch (e) {
-      print('❌ Save case error: $e');
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -104,7 +102,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
           'Steps:\n${result.steps.asMap().entries.map((e) => "${e.key + 1}. ${e.value}").join("\n")}';
       Share.share(text);
     } catch (e) {
-      print('❌ Share error: $e');
       // Fallback: show snackbar instead of share
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Unable to share. Please try again.')),
@@ -118,7 +115,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
 
   void _toggleStep(int index) {
     if (index < 0 || index >= _expandedSteps.length) {
-      print('❌ Invalid step index: $index');
       return;
     }
 
@@ -364,15 +360,15 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.gavel,
                               color: AppColors.trustNavy,
                               size: 20,
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
+                            SizedBox(width: 8),
+                            Text(
                               'Your Rights',
                               style: TextStyle(
                                 fontSize: 16,
@@ -555,16 +551,16 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                   const SizedBox(height: 24),
 
                   // Zone 5: Trust Disclaimer (above sticky buttons)
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.info_outline,
                         size: 12,
                         color: AppColors.textMediumGrey,
                       ),
-                      const SizedBox(width: 4),
-                      const Text(
+                      SizedBox(width: 4),
+                      Text(
                         'AI guidance only • Not a substitute for legal advice',
                         style: TextStyle(
                           fontSize: 11,

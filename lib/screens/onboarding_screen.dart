@@ -49,6 +49,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     } else {
       final prefs = await SharedPreferences.getInstance();
       
+      if (!context.mounted) return;
+      
       // Check if disclaimer has been shown
       final disclaimerShown = prefs.getBool('disclaimer_shown') ?? false;
       

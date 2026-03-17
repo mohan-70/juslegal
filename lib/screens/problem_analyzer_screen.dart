@@ -16,7 +16,8 @@ class ProblemAnalyzerScreen extends ConsumerStatefulWidget {
       _ProblemAnalyzerScreenState();
 }
 
-class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
+class _ProblemAnalyzerScreenState
+    extends ConsumerState<ProblemAnalyzerScreen> {
   late final TextEditingController _controller;
   String _category = '';
   bool _isAnalyzing = false;
@@ -24,27 +25,27 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
   String _getCategoryExample() {
     switch (_category) {
       case 'E-commerce & Shopping':
-        return 'Example: Flipkart seller refused my refund after 10 days';
+        return 'e.g. Flipkart seller refused my refund after 10 days';
       case 'Banking & UPI Fraud':
-        return 'Example: Unauthorized UPI transaction of ₹5,000 from my account';
+        return 'e.g. Unauthorized UPI transaction of ₹5,000 from my account';
       case 'Flights & Travel Issues':
-        return 'Example: Airline cancelled my flight and denied refund';
+        return 'e.g. Airline cancelled my flight and denied refund';
       case 'Restaurant & Food Billing':
-        return 'Example: Restaurant overcharged me and added fake GST charges';
+        return 'e.g. Restaurant overcharged me and added fake GST charges';
       case 'Hospital Billing Problems':
-        return 'Example: Hospital charged ₹50,000 for tests not performed';
+        return 'e.g. Hospital charged ₹50,000 for tests not performed';
       case 'Traffic & Vehicle Issues':
-        return 'Example: Wrong traffic challan issued for my parked car';
+        return 'e.g. Wrong traffic challan issued for my parked car';
       case 'Telecom & Internet Services':
-        return 'Example: Telecom company deducted balance without usage';
+        return 'e.g. Telecom company deducted balance without usage';
       case 'Education & Coaching Complaints':
-        return 'Example: Coaching institute refused refund after course cancellation';
+        return 'e.g. Coaching institute refused refund after course cancellation';
       case 'Rental & Housing Issues':
-        return 'Example: Landlord illegally deducting security deposit';
+        return 'e.g. Landlord illegally deducting security deposit';
       case 'Government Service Problems':
-        return 'Example: Passport office delayed processing beyond timeline';
+        return 'e.g. Passport office delayed processing beyond timeline';
       default:
-        return 'Example: Describe your issue in detail';
+        return 'e.g. Describe your legal issue in detail...';
     }
   }
 
@@ -54,7 +55,6 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
     _controller = TextEditingController();
     _category = widget.initialCategory ?? '';
     if (_category.isNotEmpty) {
-      // Delay the provider update to avoid modifying during widget build
       Future.microtask(() {
         ref.read(problemProvider.notifier).setCategory(_category);
       });
@@ -68,58 +68,46 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
   }
 
   void _analyze() async {
-    if (_isAnalyzing) {
-      print('⏳ Analysis already in progress');
-      return;
-    }
-    
+    if (_isAnalyzing) return;
+
     final text = _controller.text.trim();
-    print('🔍 Analysis button clicked');
-    print('📝 Text length: ${text.length}');
-    print('📂 Category: $_category');
-    
+
     if (text.length < 10) {
-      print('❌ Text too short, showing error');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter at least 10 characters to analyze your problem.'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text(
+              'Please enter at least 10 characters to analyze your problem.'),
+          backgroundColor: AppColors.warningSoftRed,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
         ),
       );
       return;
     }
-    
-    setState(() {
-      _isAnalyzing = true;
-    });
-    
+
+    setState(() => _isAnalyzing = true);
+
     try {
-      print('🔄 Starting analysis...');
       ref.read(problemProvider.notifier).setDescription(text);
-      
-      // Use the new analysis provider
       await ref.read(analysisProvider.notifier).analyze(text, _category);
-      
-      print('✅ Analysis completed, navigating to result screen');
-      if (mounted) {
-        context.go('/home/result');
-      }
+      if (mounted) context.go('/home/result');
     } catch (e) {
-      print('❌ Analysis failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Analysis failed: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.warningSoftRed,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
           ),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isAnalyzing = false;
-        });
-      }
+      if (mounted) setState(() => _isAnalyzing = false);
     }
   }
 
@@ -127,82 +115,215 @@ class _ProblemAnalyzerScreenState extends ConsumerState<ProblemAnalyzerScreen> {
   Widget build(BuildContext context) {
     final textLength = _controller.text.trim().length;
     final valid = textLength >= 10 && !_isAnalyzing;
-    print('🔍 Button state - Text length: $textLength, Valid: $valid, Analyzing: $_isAnalyzing');
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F6FA),
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-            onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back)),
-        title: const Text('Describe Your Problem'),
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              size: 20, color: AppColors.textDarkGrey),
+        ),
+        title: const Text(
+          'Describe Your Problem',
+          style: TextStyle(
+            color: AppColors.textDarkGrey,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            letterSpacing: -0.3,
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_category.isNotEmpty)
-              Wrap(spacing: 8, children: [Chip(label: Text(_category))]),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller,
-              maxLines: 8,
-              decoration: InputDecoration(
-                hintText:
-                    'Describe your problem in detail...\n${_getCategoryExample()}',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                    16, 12, 16, bottomInset > 0 ? 8 : 16),
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Category chip
+                    if (_category.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.trustNavy.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.trustNavy.withOpacity(0.15),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.category_rounded,
+                                size: 14, color: AppColors.trustNavy),
+                            const SizedBox(width: 6),
+                            Text(
+                              _category,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.trustNavy,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Tips card
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.justiceGold.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.justiceGold.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.tips_and_updates_rounded,
+                              size: 18, color: AppColors.justiceGold),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Describe when, where, and what happened. Mention amounts, dates and any communication with the other party.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.5,
+                                color: AppColors.textDarkGrey
+                                    .withOpacity(0.75),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Text field label
+                    const Text(
+                      'Your Problem',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDarkGrey,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Text field
+                    TextField(
+                      controller: _controller,
+                      maxLines: 9,
+                      maxLength: 1000,
+                      textInputAction: TextInputAction.newline,
+                      decoration: InputDecoration(
+                        hintText:
+                            'Describe your issue in detail...\n${_getCategoryExample()}',
+                        hintStyle: TextStyle(
+                          color: AppColors.textMediumGrey.withOpacity(0.6),
+                          fontSize: 13,
+                          height: 1.6,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                              color: AppColors.grey200, width: 1),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                              color: AppColors.grey200, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                              color: AppColors.trustNavy, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                        counterStyle: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMediumGrey.withOpacity(0.7),
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.55,
+                        color: AppColors.textDarkGrey,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+
+                    // Hint under field
+                    if (!valid && textLength > 0 && textLength < 10)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          'Enter ${10 - textLength} more character${10 - textLength == 1 ? '' : 's'} to continue',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.warningSoftRed.withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+
+                    // Loading widget
+                    if (_isAnalyzing)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 20),
+                        child: LoadingMessageWidget(),
+                      ),
+                  ],
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  // Force rebuild to update button state
-                });
-              },
             ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text('${_controller.text.length}/1000'),
-            ),
-            const Spacer(),
-            Column(
-              children: [
-                ComplaintButton(
+
+            // ── Sticky bottom action area ─────────────────────────
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F6FA),
+                border: Border(
+                  top: BorderSide(
+                    color: AppColors.grey200.withOpacity(0.8),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ComplaintButton(
                     label: _isAnalyzing ? '' : 'Analyze My Problem',
                     onPressed: _analyze,
-                    enabled: valid),
-                if (!valid && textLength > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      textLength < 10 
-                          ? 'Please enter at least ${10 - textLength} more characters'
-                          : 'Please wait for analysis to complete',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    enabled: valid,
                   ),
-              ],
-            ),
-            if (_isAnalyzing)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: LoadingMessageWidget(),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                'JusLegal provides AI-generated information only. This is NOT legal advice. '
-                'For legal proceedings, consult a qualified advocate. '
-                'AI responses may be inaccurate — always verify with official sources.',
-                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                textAlign: TextAlign.center,
+                  const SizedBox(height: 8),
+                  Text(
+                    'AI-generated information only · Not legal advice · Always verify',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textMediumGrey.withOpacity(0.55),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
           ],
